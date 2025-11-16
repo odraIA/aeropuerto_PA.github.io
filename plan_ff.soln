@@ -1,0 +1,100 @@
+
+ff: parsing domain file
+domain 'AEROPUERTO' defined
+ ... done.
+ff: parsing problem file
+problem 'AEROPUERTO-P1' defined
+ ... done.
+
+
+no metric specified. plan length assumed.
+
+checking for cyclic := effects --- OK.
+
+ff: search configuration is EHC, if that fails then  best-first on 1*g(s) + 5*h(s) where
+    metric is  plan length
+
+Cueing down from goal distance:   24 into depth [1][2][3][4][5]
+                                  22            [1][2]
+                                  21            [1][2][3][4]
+                                  20            [1]
+                                  19            [1][2][3]
+                                  18            [1]
+                                  17            [1][2][3][4][5][6]
+                                  14            [1]
+                                  13            [1][2]
+                                  12            [1][2][3]
+                                  11            [1][2][3][4][5]
+                                  10            [1][2][3]
+                                   9            [1]
+                                   8            [1][2]
+                                   7            [1][2][3]
+                                   6            [1]
+                                   5            [1]
+                                   4            [1][2]
+                                   3            [1]
+                                   2            [1]
+                                   1            [1]
+                                   0            
+
+ff: found legal plan as follows
+
+step    0: MOVER-MAQUINA M2 RECOGIDA INSPECCION
+        1: MOVER-MAQUINA M2 INSPECCION PUERTA5
+        2: ENGANCHAR-VAGON V5 M2 PUERTA5
+        3: MOVER-MAQUINA M2 PUERTA5 INSPECCION
+        4: MOVER-MAQUINA M2 INSPECCION RECOGIDA
+        5: MOVER-MAQUINA M2 RECOGIDA FACTURACION
+        6: CARGAR-EQUIPAJE-0-1 E1 V5 M2 FACTURACION
+        7: MOVER-MAQUINA M2 FACTURACION PUERTA2
+        8: CARGAR-EQUIPAJE-1-2 E5 V5 M2 PUERTA2
+        9: MOVER-MAQUINA M2 PUERTA2 FACTURACION
+       10: MOVER-MAQUINA M2 FACTURACION RECOGIDA
+       11: DESCARGAR-NORMAL-2-1 E5 V5 M2 RECOGIDA
+       12: MOVER-MAQUINA M2 RECOGIDA PUERTA6
+       13: CARGAR-EQUIPAJE-1-2 E4 V5 M2 PUERTA6
+       14: MOVER-MAQUINA M2 PUERTA6 RECOGIDA
+       15: DESCARGAR-NORMAL-2-1 E4 V5 M2 RECOGIDA
+       16: MOVER-MAQUINA M2 RECOGIDA FACTURACION
+       17: MOVER-MAQUINA M2 FACTURACION PUERTA2
+       18: MOVER-MAQUINA M2 PUERTA2 PUERTA4
+       19: DESCARGAR-NORMAL-1-0 E1 V5 M2 PUERTA4
+       20: MOVER-MAQUINA M2 PUERTA4 PUERTA2
+       21: CARGAR-EQUIPAJE-0-1 E6 V5 M2 PUERTA2
+       22: MOVER-MAQUINA M2 PUERTA2 FACTURACION
+       23: CARGAR-EQUIPAJE-1-2 E2 V5 M2 FACTURACION
+       24: MOVER-MAQUINA M2 FACTURACION RECOGIDA
+       25: MOVER-MAQUINA M2 RECOGIDA PUERTA6
+       26: DESCARGAR-NORMAL-2-1 E2 V5 M2 PUERTA6
+       27: CARGAR-EQUIPAJE-1-2 E3 V5 M2 PUERTA6
+       28: MOVER-MAQUINA M2 PUERTA6 RECOGIDA
+       29: MOVER-MAQUINA M2 RECOGIDA INSPECCION
+       30: DESCARGAR-SOSPECHOSO-INSPECCION-2-1 E3 V5 M2 INSPECCION
+       31: MOVER-MAQUINA M2 INSPECCION RECOGIDA
+       32: INSPECCIONAR-EQUIPAJE E3 INSPECCION
+       33: MOVER-MAQUINA M2 RECOGIDA INSPECCION
+       34: CARGAR-EQUIPAJE-1-2 E3 V5 M2 INSPECCION
+       35: MOVER-MAQUINA M2 INSPECCION RECOGIDA
+       36: DESCARGAR-NORMAL-2-1 E3 V5 M2 RECOGIDA
+       37: MOVER-MAQUINA M2 RECOGIDA PUERTA6
+       38: CARGAR-EQUIPAJE-1-2 E2 V5 M2 PUERTA6
+       39: MOVER-MAQUINA M2 PUERTA6 PUERTA8
+       40: DESCARGAR-NORMAL-2-1 E2 V5 M2 PUERTA8
+       41: MOVER-MAQUINA M2 PUERTA8 PUERTA7
+       42: MOVER-MAQUINA M2 PUERTA7 PUERTA5
+       43: MOVER-MAQUINA M2 PUERTA5 INSPECCION
+       44: DESCARGAR-SOSPECHOSO-INSPECCION-1-0 E6 V5 M2 INSPECCION
+       45: INSPECCIONAR-EQUIPAJE E6 INSPECCION
+       46: CARGAR-EQUIPAJE-0-1 E6 V5 M2 INSPECCION
+       47: MOVER-MAQUINA M2 INSPECCION RECOGIDA
+       48: DESCARGAR-NORMAL-1-0 E6 V5 M2 RECOGIDA
+     
+
+time spent:    0.00 seconds instantiating 3038 easy, 0 hard action templates
+               0.00 seconds reachability analysis, yielding 211 facts and 2954 actions
+               0.00 seconds creating final representation with 207 relevant facts, 0 relevant fluents
+               0.00 seconds computing LNF
+               0.00 seconds building connectivity graph
+               0.08 seconds searching, evaluating 755 states, to a max depth of 6
+               0.08 seconds total time
+

@@ -93,8 +93,8 @@ step    0: MOVER-MAQUINA M2 RECOGIDA INSPECCION
 time spent:    0.00 seconds instantiating 3038 easy, 0 hard action templates
                0.00 seconds reachability analysis, yielding 211 facts and 2954 actions
                0.00 seconds creating final representation with 207 relevant facts, 0 relevant fluents
-               0.00 seconds computing LNF
+               0.02 seconds computing LNF
                0.00 seconds building connectivity graph
-               0.08 seconds searching, evaluating 755 states, to a max depth of 6
-               0.08 seconds total time
+               0.14 seconds searching, evaluating 755 states, to a max depth of 6
+               0.16 seconds total time
 

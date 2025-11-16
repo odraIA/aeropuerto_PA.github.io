@@ -23,7 +23,7 @@
 
      (:predicates
     ; Grafo de la terminal
-    (siguiente ?desde - ubicacion ?hasta - ubicacion)
+    (siguiente ?desde - ubicacion ?hasta - ubicacion) ; Se puede ir desde, hasta según el mapa
 
     ; Vehículos
     (en-maquina ?m - maquina ?u - ubicacion)   ; la máquina m está en la ubicación u
@@ -32,7 +32,7 @@
     (vagon-libre ?v - vagon)                  ; v está suelto (no enganchado a ninguna máquina)
 
     ; Equipajes
-    (equipaje-en ?e - equipaje ?u - ubicacion)      ; e está en el suelo en u
+    (equipaje-en ?e - equipaje ?u - ubicacion)      ; e está en la ubicacion u
     (equipaje-en-vagon ?e - equipaje ?v - vagon)    ; e está dentro del vagón v
 
     ; Contador de capacidad del vagón (capacidad = 2)
@@ -48,9 +48,7 @@
     (es-oficina-inspeccion ?u - ubicacion)
   )
 
-  ; ========================================
   ;   Mover la máquina por el grafo
-  ; ========================================
 
   (:action mover-maquina
     :parameters (?m - maquina ?desde ?hasta - ubicacion)
@@ -64,11 +62,9 @@
     )
   )
 
-  ; ========================================
   ;   Enganchar / desenganchar vagones
-  ; ========================================
+
   ; Solo se puede enganchar/desenganchar si el vagón está vacío (n0).
-  ; Así evitamos desenganchar vagones con paquetes.
 
   (:action enganchar-vagon
     :parameters (?v - vagon ?m - maquina ?u - ubicacion)
@@ -99,9 +95,8 @@
     )
   )
 
-  ; ========================================
   ;   Cargar equipajes en vagones
-  ; ========================================
+
   ; Dos acciones: 0→1 y 1→2 (contador n0/n1/n2).
   ; El vagón debe estar enganchado a la máquina en la misma ubicación.
 
@@ -137,9 +132,8 @@
     )
   )
 
-  ; ========================================
   ;   Descargar equipajes normales
-  ; ========================================
+
   ; No hace falta desenganchar el vagón.
   ; Se descarga donde esté la máquina.
 
@@ -177,9 +171,8 @@
     )
   )
 
-  ; ========================================
   ;   Descargar equipajes sospechosos
-  ; ========================================
+
   ; SOLO se pueden dejar en la oficina de inspección.
   ; Para eso usamos el predicado es-oficina-inspeccion.
 
@@ -219,9 +212,8 @@
     )
   )
 
-  ; ========================================
-  ;   Inspeccionar equipajes
-  ; ========================================
+  ;   Inspeccionar Equipajes
+
   ; Una vez en la oficina de inspección, el equipaje deja de ser sospechoso
   ; y pasa a ser normal.
 

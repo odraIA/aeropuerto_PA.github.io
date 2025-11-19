@@ -132,15 +132,10 @@
       ; destinos finales
       (esta-en e1 puerta4)
       (esta-en e2 puerta8)
-
       (esta-en e3 recogida)
       (esta-en e4 recogida)
       (esta-en e5 recogida)
       (esta-en e6 recogida)
-
-      ; los sospechosos han tenido que ser inspeccionados
-      (normal e3)
-      (normal e6)
     )
   )
 )

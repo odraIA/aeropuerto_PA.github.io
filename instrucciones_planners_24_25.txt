@@ -136,3 +136,14 @@ VAL (herramienta para validar planes cl�sicos)
 > ./validate -v <domain.pddl> <problem.pddl> <plan_file>
 
 https://github.com/KCL-Planning/VAL
+
+
+
+Ningún planificador es óptimo, no pueden garantizar la solución óptima
+FF -> planificador secuencial, intenta encontrar el plan con el menor número de acciones/timesteps/pasos
+
+LPG -> plan con acciones en paralelo, búsqueda en un grafo (puede ser una búsqueda muy mala)
+    -timesteps intenta encontrar el plan con menor número de timesteps
+    -n 3 refina 3 veces (se puede cambiar) la primera solución encontrada
+
+OPTIC -> plan con acciones en paralelo, búsqueda en espacio de planes (árbol)

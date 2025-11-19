@@ -3,7 +3,7 @@ INSTRUCCIONES PARA EJECUTAR LOS PLANIFICADORES
 ==============================================
 
 
-FF ó METRIC-FF (http://fai.cs.uni-saarland.de/hoffmann/metric-ff.html)
+FF ï¿½ METRIC-FF (http://fai.cs.uni-saarland.de/hoffmann/metric-ff.html)
 
 
 Probar fichero Metric-FF ejecutable 
@@ -11,24 +11,24 @@ Probar fichero Metric-FF ejecutable
 > ./metric_ff -o <domain.pddl> -f <problem.pddl>
 
 
-o bien compilar el código fuente de Metric-FF (basta con hacer $make).
+o bien compilar el cï¿½digo fuente de Metric-FF (basta con hacer $make).
 
 
-En el caso de que no funcione en la versión de Linux utilizada, se muestran otras opciones:
+En el caso de que no funcione en la versiï¿½n de Linux utilizada, se muestran otras opciones:
 
-(1) Descargar Metric-FF-v2.1.tgz y compilar igualmente con $make. En este caso, el fichero ejectuable se llama ff y hay que ejecturalo así:
+(1) Descargar Metric-FF-v2.1.tgz y compilar igualmente con $make. En este caso, el fichero ejectuable se llama ff y hay que ejecturalo asï¿½:
 
 > ./ff -o <domain.pddl> -f <problem.pddl> -s 0
 
-donde -s 0 significa que el planificador se ejecutará con la opción de búsqueda (search) por defecto (hill climbing + BFS).
+donde -s 0 significa que el planificador se ejecutarï¿½ con la opciï¿½n de bï¿½squeda (search) por defecto (hill climbing + BFS).
 
 
-(2) Descargar FF-v2.3.tgz y compilar igualmente con $make. En este caso, el fichero ejecutable es ff y hay que ejecutarlo así:
+(2) Descargar FF-v2.3.tgz y compilar igualmente con $make. En este caso, el fichero ejecutable es ff y hay que ejecutarlo asï¿½:
 
 > ./ff -o <domain.pddl> -f <problem.pddl>
 
 
-FF se puede ejecutar con las opciones -E -h 0 (la primera desactiva el hill climbing, la segunda pone la heurística a 0, de forma que FF se ejecuta en modo óptimo con estas dos opciones).
+FF se puede ejecutar con las opciones -E -h 0 (la primera desactiva el hill climbing, la segunda pone la heurï¿½stica a 0, de forma que FF se ejecuta en modo ï¿½ptimo con estas dos opciones).
 
 
 ============================================================================================
@@ -36,18 +36,18 @@ FF se puede ejecutar con las opciones -E -h 0 (la primera desactiva el hill clim
 
 LPG (http://zeus.ing.unibs.it/lpg/)
 
-Probar primero la versión lpg_MAX_PLAN_LENGTH, una versión de LPG compilada con tamaños más grandes de arrays. La contraseña del archivo zip es 1234.
+Probar primero la versiï¿½n lpg_MAX_PLAN_LENGTH, una versiï¿½n de LPG compilada con tamaï¿½os mï¿½s grandes de arrays. La contraseï¿½a del archivo zip es 1234.
 
 > ./lpg        -o <domain.pddl> 
                -f <problem.pddl> 
                -n <number>    specifies the desired number of solutions
-               -out <fich_solution>   ;; fichero para la solución
+               -out <fich_solution>   ;; fichero para la soluciï¿½n
 
 
-Si se quiere minimizar el número de timesteps hay que usar además la etiqueta -timesteps en detrimento del número de acciones.
+Si se quiere minimizar el nï¿½mero de timesteps hay que usar ademï¿½s la etiqueta -timesteps en detrimento del nï¿½mero de acciones.
 
 
-También se puede probar la versión lpg-td (ejecutable LPG-td 1.4).
+Tambiï¿½n se puede probar la versiï¿½n lpg-td (ejecutable LPG-td 1.4).
 
 
 
@@ -55,11 +55,11 @@ También se puede probar la versión lpg-td (ejecutable LPG-td 1.4).
 
 OPTIC planner
 
-Probar primero la versión  optic-clp (compilado) en PoliformaT
+Probar primero la versiï¿½n  optic-clp (compilado) en PoliformaT
 
-También se puede probar la versión casi-compilada optic-clp (almost-compiled binary of OPTIC for 32-bit Linux). En este casoo, bajar el fichero optic-clp.tar.bz2 o bien de la página https://sourceforge.net/projects/tsgp/   
+Tambiï¿½n se puede probar la versiï¿½n casi-compilada optic-clp (almost-compiled binary of OPTIC for 32-bit Linux). En este casoo, bajar el fichero optic-clp.tar.bz2 o bien de la pï¿½gina https://sourceforge.net/projects/tsgp/   
 
-El fichero está compilado pero hay que 'linkarlo' con las librerías de CLP. Asegurarse que vuestra versión de Linux contiene los paquetes indicados en la página de OPTIC.
+El fichero estï¿½ compilado pero hay que 'linkarlo' con las librerï¿½as de CLP. Asegurarse que vuestra versiï¿½n de Linux contiene los paquetes indicados en la pï¿½gina de OPTIC.
 
 PAQUETES: CMAKE, PERL, BISON, FLEX
 
@@ -67,16 +67,16 @@ PARA COMPILAR (leer el fichero README):
 1) RUN-CMAKE-RELEASE 
 2) BUILD-RELEASE (si da error, entrar en el directorio y ejecutar make)
 
-Si estáis en una máquina de 64 bits, tened en cuenta las instrucciones indicadas en la sección 'Users of 64-bit Machines'.  
+Si estï¿½is en una mï¿½quina de 64 bits, tened en cuenta las instrucciones indicadas en la secciï¿½n 'Users of 64-bit Machines'.  
 
 ------------------------------------------
 
-Ejecución OPTIC
+Ejecuciï¿½n OPTIC
 
 > ./optic-clp <domain.pddl> <problem.pddl>
 
 
-OPTIC es un planficador de orden parcial. Devuelve una primera solución (determinista) y luego intenta mejorarla. Ejemplo:
+OPTIC es un planficador de orden parcial. Devuelve una primera soluciï¿½n (determinista) y luego intenta mejorarla. Ejemplo:
 
 
 ; No metric specified - using makespan
@@ -100,7 +100,7 @@ OPTIC es un planficador de orden parcial. Devuelve una primera solución (determi
  * All goal deadlines now no later than 0.004
 
 
-PLAN DE 11 ACCIONES ENCONTRADO EN 4 TIME STEPS. NOTESE QUE OPTIC DEVUELVE LOS TIME STEPS COMO 0.000 0.001 PORQUE ES UN PLANIFICADOR TEMPORAL Y TIENE LA SALIDA PREPARADA PARA PLANES TEMPORALES. PARA FIJARSE EN EL NUMERO DE TIME STEPS, HAY QUE FIJARSE EN EL ÚLTIMO DIGITO DEL TIME.
+PLAN DE 11 ACCIONES ENCONTRADO EN 4 TIME STEPS. NOTESE QUE OPTIC DEVUELVE LOS TIME STEPS COMO 0.000 0.001 PORQUE ES UN PLANIFICADOR TEMPORAL Y TIENE LA SALIDA PREPARADA PARA PLANES TEMPORALES. PARA FIJARSE EN EL NUMERO DE TIME STEPS, HAY QUE FIJARSE EN EL ï¿½LTIMO DIGITO DEL TIME.
 
 A PARTIR DEL PRIMER PLAN, SE FIJA EN EL NUMERO DE TIME STEPS (4 EN ESTE CASO) E INTENTA ENCONTRAR OTRO PLAN EN MENOS DE 4 TIME STEPS.
 
@@ -126,19 +126,13 @@ Problem Unsolvable
 0.004: (drop hoist1 crate1 pallet1 distributor0)  [0.001]
 
 
-ACTIVA BEST-FIRST SEARCH. NO ENCUENTRA OTRA SOLUCIÓN, POR ESO DICE PROBLEM UNSOLVABLE Y DEVUELVE LA MISMA SOLUCIÓN.
+ACTIVA BEST-FIRST SEARCH. NO ENCUENTRA OTRA SOLUCIï¿½N, POR ESO DICE PROBLEM UNSOLVABLE Y DEVUELVE LA MISMA SOLUCIï¿½N.
 
 
 =============================================================================
 
-VAL (herramienta para validar planes clásicos)
+VAL (herramienta para validar planes clï¿½sicos)
 
 > ./validate -v <domain.pddl> <problem.pddl> <plan_file>
 
 https://github.com/KCL-Planning/VAL
-
-
-
-
-
-

@@ -67,20 +67,20 @@
 
     ;; ---------- Vehículos ----------
     ;; tres vagones sueltos en puerta1
-    (en-vagon v1 puerta1)
-    (en-vagon v2 puerta1)
-    (en-vagon v3 puerta1)
+    (esta-en v1 puerta1)
+    (esta-en v2 puerta1)
+    (esta-en v3 puerta1)
 
     ;; dos vagones sueltos en puerta5
-    (en-vagon v4 puerta5)
-    (en-vagon v5 puerta5)
+    (esta-en v4 puerta5)
+    (esta-en v5 puerta5)
 
     ;; todos los vagones empiezan libres y vacíos (n0)
-    (vagon-libre v1)
-    (vagon-libre v2)
-    (vagon-libre v3)
-    (vagon-libre v4)
-    (vagon-libre v5)
+    (vagon-suelto v1)
+    (vagon-suelto v2)
+    (vagon-suelto v3)
+    (vagon-suelto v4)
+    (vagon-suelto v5)
 
     (n0 v1)
     (n0 v2)
@@ -88,46 +88,55 @@
     (n0 v4)
     (n0 v5)
 
+    (libre m1)
+    (libre m2)
+
+    (not (libre v1))
+    (not (libre v2))
+    (not (libre v3))
+    (not (libre v4))
+    (not (libre v5))
+
     ;; dos máquinas en la zona de recogida
-    (en-maquina m1 recogida)
-    (en-maquina m2 recogida)
+    (esta-en m1 recogida)
+    (esta-en m2 recogida)
 
     ;; ---------- Equipajes ----------
     ;; 1) no sospechoso facturado → puerta4
-    (equipaje-en e1 facturacion)
+    (esta-en e1 facturacion)
     (normal e1)
 
     ;; 2) no sospechoso facturado → puerta8
-    (equipaje-en e2 facturacion)
+    (esta-en e2 facturacion)
     (normal e2)
 
     ;; 3) sospechoso llega a puerta6 → recogida (pasando por inspección)
-    (equipaje-en e3 puerta6)
+    (esta-en e3 puerta6)
     (sospechoso e3)
 
     ;; 4) no sospechoso llega a puerta6 → recogida
-    (equipaje-en e4 puerta6)
+    (esta-en e4 puerta6)
     (normal e4)
 
     ;; 5) no sospechoso llega a puerta2 → recogida
-    (equipaje-en e5 puerta2)
+    (esta-en e5 puerta2)
     (normal e5)
 
     ;; 6) sospechoso llega a puerta2 → recogida (pasando por inspección)
-    (equipaje-en e6 puerta2)
+    (esta-en e6 puerta2)
     (sospechoso e6)
     )
 
   (:goal
     (and
       ;; destinos finales
-      (equipaje-en e1 puerta4)
-      (equipaje-en e2 puerta8)
+      (esta-en e1 puerta4)
+      (esta-en e2 puerta8)
 
-      (equipaje-en e3 recogida)
-      (equipaje-en e4 recogida)
-      (equipaje-en e5 recogida)
-      (equipaje-en e6 recogida)
+      (esta-en e3 recogida)
+      (esta-en e4 recogida)
+      (esta-en e5 recogida)
+      (esta-en e6 recogida)
 
       ;; los sospechosos han tenido que ser inspeccionados
       (normal e3)

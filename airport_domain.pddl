@@ -26,12 +26,11 @@
     (siguiente ?desde - ubicacion ?hasta - ubicacion) ; Se puede ir desde, hasta según el mapa
 
     ; Vehículos
-    (en-maquina ?m - maquina ?u - ubicacion)   ; la máquina m está en la ubicación u
-    (en-vagon ?v - vagon ?u - ubicacion)      ; el vagón v está suelto en la ubicación u
-    (enganchado ?v - vagon ?m - maquina)      ; el vagón v está enganchado a la máquina m
-    (vagon-libre ?v - vagon)                  ; v está suelto (no enganchado a ninguna máquina)
-
-    ; RICARDO: una máquina puede tener varios vagones enganchados, estos vagones extra se enganchan a otro vagón, no a la propia máquina (complica un poco todo)
+    (esta-en ?m - (either maquina equipaje vagon) ?u - ubicacion)   ; la máquina m está en la ubicación u
+    (en ?v - vagon ?u - ubicacion)      ; el vagón v está suelto en la ubicación u
+    (enganchado ?v - vagon ?m - (either maquina vagon)) ; el vagón v está enganchado a la máquina m
+    (vagon-suelto ?v - vagon)                  ; v está suelto (no enganchado a ninguna máquina)
+    (libre ?m - (either maquina vagon))
 
     ; Equipajes
     (equipaje-en ?e - equipaje ?u - ubicacion)      ; e está en la ubicacion u
@@ -55,12 +54,12 @@
   (:action mover-maquina
     :parameters (?m - maquina ?desde ?hasta - ubicacion)
     :precondition (and
-      (en-maquina ?m ?desde)
+      (esta-en ?m ?desde)
       (siguiente ?desde ?hasta)
     )
     :effect (and
-      (en-maquina ?m ?hasta)
-      (not (en-maquina ?m ?desde))
+      (esta-en ?m ?hasta)
+      (not (esta-en ?m ?desde))
     )
   )
 
@@ -69,31 +68,36 @@
   ; Solo se puede enganchar/desenganchar si el vagón está vacío (n0).
 
   (:action enganchar-vagon
-    :parameters (?v - vagon ?m - maquina ?u - ubicacion)
+    :parameters (?v - vagon ?m - (either maquina vagon) ?u - ubicacion)
     :precondition (and
-      (vagon-libre ?v)
+      (vagon-suelto ?v)
       (n0 ?v)
-      (en-vagon ?v ?u)
-      (en-maquina ?m ?u)
+      (esta-en ?v ?u)
+      (esta-en ?m ?u)
+      (libre ?m)
     )
     :effect (and
       (enganchado ?v ?m)
-      (not (vagon-libre ?v)) ; RICARDO: no se pueden usar precondiciones negativas, lo puse arriba
-      (not (en-vagon ?v ?u))
+      (not (vagon-suelto ?v))
+      (not (esta-en ?v ?u))
+      (not (libre ?m))
+      (libre ?v)
     )
   )
 
   (:action desenganchar-vagon
-    :parameters (?v - vagon ?m - maquina ?u - ubicacion)
+    :parameters (?v - vagon ?m - (either maquina vagon) ?u - ubicacion)
     :precondition (and
       (enganchado ?v ?m)
       (n0 ?v)
-      (en-maquina ?m ?u)
+      (esta-en ?m ?u)
     )
     :effect (and
-      (vagon-libre ?v)
-      (en-vagon ?v ?u)
+      (vagon-suelto ?v)
+      (not (libre ?v))
+      (esta-en ?v ?u)
       (not (enganchado ?v ?m))
+      (libre ?m)
     )
   )
 
@@ -105,14 +109,14 @@
   (:action cargar-equipaje-0-1
     :parameters (?e - equipaje ?v - vagon ?m - maquina ?u - ubicacion)
     :precondition (and
-      (en-maquina ?m ?u)
+      (esta-en ?m ?u)
       (enganchado ?v ?m)
-      (equipaje-en ?e ?u)
+      (esta-en ?e ?u)
       (n0 ?v)
     )
     :effect (and
       (equipaje-en-vagon ?e ?v)
-      (not (equipaje-en ?e ?u))
+      (not (esta-en ?e ?u))
       (n1 ?v)
       (not (n0 ?v))
     )
@@ -121,14 +125,14 @@
   (:action cargar-equipaje-1-2
     :parameters (?e - equipaje ?v - vagon ?m - maquina ?u - ubicacion)
     :precondition (and
-      (en-maquina ?m ?u)
+      (esta-en ?m ?u)
       (enganchado ?v ?m)
-      (equipaje-en ?e ?u)
+      (esta-en ?e ?u)
       (n1 ?v)
     )
     :effect (and
       (equipaje-en-vagon ?e ?v)
-      (not (equipaje-en ?e ?u))
+      (not (esta-en ?e ?u))
       (n2 ?v)
       (not (n1 ?v))
     )
@@ -145,11 +149,11 @@
       (normal ?e)
       (equipaje-en-vagon ?e ?v)
       (enganchado ?v ?m)
-      (en-maquina ?m ?u)
+      (esta-en ?m ?u)
       (n1 ?v)
     )
     :effect (and
-      (equipaje-en ?e ?u)
+      (esta-en ?e ?u)
       (not (equipaje-en-vagon ?e ?v))
       (n0 ?v)
       (not (n1 ?v))
@@ -162,11 +166,11 @@
       (normal ?e)
       (equipaje-en-vagon ?e ?v)
       (enganchado ?v ?m)
-      (en-maquina ?m ?u)
+      (esta-en ?m ?u)
       (n2 ?v)
     )
     :effect (and
-      (equipaje-en ?e ?u)
+      (esta-en ?e ?u)
       (not (equipaje-en-vagon ?e ?v))
       (n1 ?v)
       (not (n2 ?v))
@@ -184,12 +188,12 @@
       (sospechoso ?e)
       (equipaje-en-vagon ?e ?v)
       (enganchado ?v ?m)
-      (en-maquina ?m ?u)
+      (esta-en ?m ?u)
       (es-oficina-inspeccion ?u)
       (n1 ?v)
     )
     :effect (and
-      (equipaje-en ?e ?u)
+      (esta-en ?e ?u)
       (not (equipaje-en-vagon ?e ?v))
       (n0 ?v)
       (not (n1 ?v))
@@ -202,12 +206,12 @@
       (sospechoso ?e)
       (equipaje-en-vagon ?e ?v)
       (enganchado ?v ?m)
-      (en-maquina ?m ?u)
+      (esta-en ?m ?u)
       (es-oficina-inspeccion ?u)
       (n2 ?v)
     )
     :effect (and
-      (equipaje-en ?e ?u)
+      (esta-en ?e ?u)
       (not (equipaje-en-vagon ?e ?v))
       (n1 ?v)
       (not (n2 ?v))
@@ -223,7 +227,7 @@
     :parameters (?e - equipaje ?u - ubicacion)
     :precondition (and
       (sospechoso ?e)
-      (equipaje-en ?e ?u)
+      (esta-en ?e ?u)
       (es-oficina-inspeccion ?u)
     )
     :effect (and

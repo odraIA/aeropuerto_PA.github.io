@@ -8,7 +8,7 @@ FF � METRIC-FF (http://fai.cs.uni-saarland.de/hoffmann/metric-ff.html)
 
 Probar fichero Metric-FF ejecutable 
 
-> ./metric_ff -o <domain.pddl> -f <problem.pddl>
+> ./metric_ff -o <domain.pddl> -f <problem.pddl> > archivo_final
 
 
 o bien compilar el c�digo fuente de Metric-FF (basta con hacer $make).
@@ -141,6 +141,7 @@ https://github.com/KCL-Planning/VAL
 
 Ningún planificador es óptimo, no pueden garantizar la solución óptima
 FF -> planificador secuencial, intenta encontrar el plan con el menor número de acciones/timesteps/pasos
+
 
 LPG -> plan con acciones en paralelo, búsqueda en un grafo (puede ser una búsqueda muy mala)
     -timesteps intenta encontrar el plan con menor número de timesteps

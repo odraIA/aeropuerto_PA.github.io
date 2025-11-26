@@ -69,7 +69,8 @@ def parse_plan(plan_text):
         idx = int(step_match.group(1))
         raw_action = step_match.group(2).strip()
         tokens = raw_action.split()
-        actions.append({"index": idx, "name": tokens[0], "args": tokens[1:], "raw": raw_action})
+        lower_tokens = [tok.lower() for tok in tokens]
+        actions.append({"index": idx, "name": lower_tokens[0], "args": lower_tokens[1:], "raw": raw_action})
     return actions
 
 def build_payload(plan_path, problem_path):
@@ -264,8 +265,8 @@ function computeState(upTo){
 
 function applyAction(st, action){
   const [type, ...rest] = [action.name, ...action.args];
-  const upper = type.toUpperCase();
-  if(upper.startsWith('MOVER-MAQUINA')){
+  const lower = type.toLowerCase();
+  if(lower.startsWith('mover-maquina')){
     const [machine, , to] = rest;
     if(st[machine]){
       st[machine].location = to;
@@ -275,7 +276,7 @@ function applyAction(st, action){
         }
       }
     }
-  } else if(upper.startsWith('ENGANCHAR-VAGON')){
+  } else if(lower.startsWith('enganchar-vagon')){
     const [vagon, target] = rest;
     if(st[vagon]){
       st[vagon].attachedTo = target;
@@ -283,18 +284,18 @@ function applyAction(st, action){
         st[vagon].location = st[target].location;
       }
     }
-  } else if(upper.startsWith('DESENGANCHAR-VAGON')){
+  } else if(lower.startsWith('desenganchar-vagon')){
     const [vagon] = rest;
     if(st[vagon]){
       st[vagon].attachedTo = null;
     }
-  } else if(upper.startsWith('CARGAR-EQUIPAJE')){
+  } else if(lower.startsWith('cargar-equipaje')){
     const [equipaje, vagon] = rest;
     if(st[equipaje]){
       st[equipaje].container = vagon;
       st[equipaje].location = null;
     }
-  } else if(upper.startsWith('DESCARGAR')){
+  } else if(lower.startsWith('descargar')){
     const [equipaje, , , destino] = rest;
     if(st[equipaje]){
       st[equipaje].container = null;

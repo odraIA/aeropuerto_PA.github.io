@@ -25,7 +25,6 @@
     (esta-en ?m - (either maquina equipaje vagon) ?u - ubicacion)   ; la máquina m está en la ubicación u
     
     ; Vehículos
-    (en ?v - vagon ?u - ubicacion)      ; el vagón v está suelto en la ubicación u
     (enganchado ?v - vagon ?m - (either maquina vagon)) ; el vagón v está enganchado a la máquina m
     (vagon-suelto ?v - vagon)                  ; v está suelto (no enganchado a ninguna máquina)
     (libre ?m - (either maquina vagon))
@@ -172,55 +171,17 @@
     )
   )
 
-  ;   Descargar equipajes sospechosos
-
-  ; SOLO se pueden dejar en la oficina de inspección.
-
-  (:action descargar-sospechoso-inspeccion-1-0
-    :parameters (?e - equipaje ?v - vagon ?m - maquina ?u - ubicacion)
-    :precondition (and
-      (sospechoso ?e)
-      (equipaje-en-vagon ?e ?v)
-      (enganchado ?v ?m)
-      (esta-en ?m ?u)
-      (es-oficina-inspeccion ?u)
-      (n1 ?v)
-    )
-    :effect (and
-      (esta-en ?e ?u)
-      (not (equipaje-en-vagon ?e ?v))
-      (n0 ?v)
-      (not (n1 ?v))
-    )
-  )
-
-  (:action descargar-sospechoso-inspeccion-2-1
-    :parameters (?e - equipaje ?v - vagon ?m - maquina ?u - ubicacion)
-    :precondition (and
-      (sospechoso ?e)
-      (equipaje-en-vagon ?e ?v)
-      (enganchado ?v ?m)
-      (esta-en ?m ?u)
-      (es-oficina-inspeccion ?u)
-      (n2 ?v)
-    )
-    :effect (and
-      (esta-en ?e ?u)
-      (not (equipaje-en-vagon ?e ?v))
-      (n1 ?v)
-      (not (n2 ?v))
-    )
-  )
-
   ;   Inspeccionar Equipajes
 
   ; Una vez en la oficina de inspección, el equipaje deja de ser sospechoso
 
   (:action inspeccionar-equipaje
-    :parameters (?e - equipaje ?u - ubicacion)
+    :parameters (?e - equipaje ?u - ubicacion ?v - vagon ?m - maquina)
     :precondition (and
       (sospechoso ?e)
-      (esta-en ?e ?u)
+      (equipaje-en-vagon ?e ?v)
+      (enganchado ?v ?m)
+      (esta-en ?m ?u)
       (es-oficina-inspeccion ?u)
     )
     :effect (and

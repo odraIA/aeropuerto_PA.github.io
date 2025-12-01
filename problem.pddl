@@ -15,6 +15,9 @@
 
     ; equipajes
     e1 e2 e3 e4 e5 e6 - equipaje
+
+    ; niveles de carga
+    n0 n1 n2 - nivel   
   )
 
   (:init
@@ -65,6 +68,12 @@
     ; Oficina de inspección
     (es-oficina-inspeccion inspeccion)
 
+
+    ; Niveles
+    (siguiente-nivel n0 n1)
+    (siguiente-nivel n1 n2)
+    (nivel-cero n0)
+
     ; ---------- Vehículos ----------
     ; tres vagones sueltos en puerta1
     (esta-en v1 puerta1)
@@ -82,11 +91,12 @@
     (vagon-suelto v4)
     (vagon-suelto v5)
 
-    (n0 v1)
-    (n0 v2)
-    (n0 v3)
-    (n0 v4)
-    (n0 v5)
+    (en-nivel v1 n0)
+    (en-nivel v2 n0)
+    (en-nivel v3 n0)
+    (en-nivel v4 n0)
+    (en-nivel v5 n0)
+
 
     (libre m1)
     (libre m2)

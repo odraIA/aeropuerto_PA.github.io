@@ -15,6 +15,7 @@
       maquina
       vagon
       equipaje
+      nivel
     )
 
      (:predicates
@@ -33,9 +34,9 @@
     (equipaje-en-vagon ?e - equipaje ?v - vagon)    ; e está dentro del vagón v
 
     ; Contador de capacidad del vagón (capacidad = 2)
-    (n0 ?v - vagon)
-    (n1 ?v - vagon)
-    (n2 ?v - vagon)
+    (en-nivel ?v - vagon ?n - nivel)                ; el vagón v esta en el nivel n
+    (siguiente-nivel ?n1 - nivel ?n2 - nivel)
+    (nivel-cero ?n - nivel)
 
     ; Tipo de equipaje
     (normal ?e - equipaje)
@@ -62,10 +63,10 @@
   ;   Enganchar / desenganchar vagones 
 
   (:action enganchar-vagon
-    :parameters (?v - vagon ?m - (either maquina vagon) ?u - ubicacion)
+    :parameters (?v - vagon ?m - (either maquina vagon) ?u - ubicacion ?n nivel)
     :precondition (and
       (vagon-suelto ?v)
-      (n0 ?v)
+      (nivel-cero ?n)
       (esta-en ?v ?u)
       (esta-en ?m ?u)
       (libre ?m)
@@ -80,10 +81,11 @@
   )
 
   (:action desenganchar-vagon
-    :parameters (?v - vagon ?m - (either maquina vagon) ?u - ubicacion)
+    :parameters (?v - vagon ?m - (either maquina vagon) ?u - ubicacion ?n nivel)
     :precondition (and
       (enganchado ?v ?m)
-      (n0 ?v)
+      (en-nivel ?v ?n)
+      (nivel-cero ?n)
       (esta-en ?m ?u)
     )
     :effect (and
@@ -96,83 +98,51 @@
   )
 
   ;   Cargar equipajes en vagones
-
-  ; Dos acciones: 0→1 y 1→2 (contador n0/n1/n2).
   ; El vagón debe estar enganchado a la máquina en la misma ubicación.
 
-  (:action cargar-equipaje-0-1
-    :parameters (?e - equipaje ?v - vagon ?m - maquina ?u - ubicacion)
+  (:action cargar-equipaje
+    :parameters (?e - equipaje ?v - vagon ?m - maquina ?u - ubicacion  ?n1 ?n2 -nivel)
     :precondition (and
       (esta-en ?m ?u)
       (enganchado ?v ?m)
       (esta-en ?e ?u)
-      (n0 ?v)
+      (en-nivel ?v ?n1)
+      (siguiente-nivel ?n1 ?n2)
     )
     :effect (and
       (equipaje-en-vagon ?e ?v)
       (not (esta-en ?e ?u))
-      (n1 ?v)
-      (not (n0 ?v))
+      (en-nivel ?v ?n2)
+      (not (en´-nivel ?v ?n1)
     )
   )
 
-  (:action cargar-equipaje-1-2
-    :parameters (?e - equipaje ?v - vagon ?m - maquina ?u - ubicacion)
-    :precondition (and
-      (esta-en ?m ?u)
-      (enganchado ?v ?m)
-      (esta-en ?e ?u)
-      (n1 ?v)
-    )
-    :effect (and
-      (equipaje-en-vagon ?e ?v)
-      (not (esta-en ?e ?u))
-      (n2 ?v)
-      (not (n1 ?v))
-    )
-  )
 
   ;   Descargar equipajes normales
 
   ; No hace falta desenganchar el vagón.
   ; Se descarga donde esté la máquina.
 
-  (:action descargar-normal-1-0
-    :parameters (?e - equipaje ?v - vagon ?m - maquina ?u - ubicacion)
+  (:action descargar-normal
+    :parameters (?e - equipaje ?v - vagon ?m - maquina ?u - ubicacion ?n1 ?n2 - nivel)
     :precondition (and
       (normal ?e)
       (equipaje-en-vagon ?e ?v)
       (enganchado ?v ?m)
       (esta-en ?m ?u)
-      (n1 ?v)
+      (en-nivel ?v ?n1)
+      (siguiente-nivel ?n2 ?n1)
     )
     :effect (and
       (esta-en ?e ?u)
       (not (equipaje-en-vagon ?e ?v))
-      (n0 ?v)
-      (not (n1 ?v))
-    )
-  )
-
-  (:action descargar-normal-2-1
-    :parameters (?e - equipaje ?v - vagon ?m - maquina ?u - ubicacion)
-    :precondition (and
-      (normal ?e)
-      (equipaje-en-vagon ?e ?v)
-      (enganchado ?v ?m)
-      (esta-en ?m ?u)
-      (n2 ?v)
-    )
-    :effect (and
-      (esta-en ?e ?u)
-      (not (equipaje-en-vagon ?e ?v))
-      (n1 ?v)
-      (not (n2 ?v))
+      (en-nivel ?v ?n2)
+      (not (en-nivel ?v ?n1))
     )
   )
 
   ;   Inspeccionar Equipajes
-
+  
   ; Una vez en la oficina de inspección, el equipaje deja de ser sospechoso
 
   (:action inspeccionar-equipaje

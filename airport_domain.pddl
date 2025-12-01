@@ -63,7 +63,7 @@
   ;   Enganchar / desenganchar vagones 
 
   (:action enganchar-vagon
-    :parameters (?v - vagon ?m - (either maquina vagon) ?u - ubicacion ?n nivel)
+    :parameters (?v - vagon ?m - (either maquina vagon) ?u - ubicacion ?n - nivel)
     :precondition (and
       (vagon-suelto ?v)
       (nivel-cero ?n)
@@ -81,7 +81,7 @@
   )
 
   (:action desenganchar-vagon
-    :parameters (?v - vagon ?m - (either maquina vagon) ?u - ubicacion ?n nivel)
+    :parameters (?v - vagon ?m - (either maquina vagon) ?u - ubicacion ?n - nivel)
     :precondition (and
       (enganchado ?v ?m)
       (en-nivel ?v ?n)
@@ -101,7 +101,7 @@
   ; El vagón debe estar enganchado a la máquina en la misma ubicación.
 
   (:action cargar-equipaje
-    :parameters (?e - equipaje ?v - vagon ?m - maquina ?u - ubicacion  ?n1 ?n2 -nivel)
+    :parameters (?e - equipaje ?v - vagon ?m - maquina ?u - ubicacion ?n1 ?n2 - nivel)
     :precondition (and
       (esta-en ?m ?u)
       (enganchado ?v ?m)
@@ -113,7 +113,7 @@
       (equipaje-en-vagon ?e ?v)
       (not (esta-en ?e ?u))
       (en-nivel ?v ?n2)
-      (not (en´-nivel ?v ?n1)
+      (not (en-nivel ?v ?n1))
     )
   )
 
@@ -161,5 +161,3 @@
   )
 
 )
-
-

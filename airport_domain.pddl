@@ -1,13 +1,3 @@
-; LO QUE DIJERON EN CLASE
-; para contar lo que debemos hacer es crear predicados que sean
-;      n0, n1, n2, ..., nk y poner a true sólo el numero que llevamos
-; cuidado al enganchar, no se pueden desenganchar vagones con paquetes
-; no se puede enganchar un vagón al medio
-; No hace falta desenganchar un vagón para dejar un paquete
-; No se puede dejar un paquete sospechoso
-; El método para inspeccionar da igual (dejar paquete, vagón o tren entero) pero debemos dejarlo explicado
-; ESTÁ PROHIBIDO USAR PRECONDICIONES NEGATIVAS PORQUE EL PLANIFICADOR OPTIC NO LAS SOPORTA
-
 (define (domain aeropuerto)
     (:requirements :strips :typing)
     (:types
@@ -28,7 +18,7 @@
     ; Vehículos
     (enganchado ?v - vagon ?m - (either maquina vagon)) ; el vagón v está enganchado a la máquina m
     (vagon-suelto ?v - vagon)                  ; v está suelto (no enganchado a ninguna máquina)
-    (libre ?m - (either maquina vagon))
+    (libre ?m - (either maquina vagon))        ; se puede enganchar un vagon a la maquina / vagon
 
     ; Equipajes
     (equipaje-en-vagon ?e - equipaje ?v - vagon)    ; e está dentro del vagón v
@@ -66,6 +56,7 @@
     :parameters (?v - vagon ?m - (either maquina vagon) ?u - ubicacion ?n - nivel)
     :precondition (and
       (vagon-suelto ?v)
+      (en-nivel ?v ?n)
       (nivel-cero ?n)
       (esta-en ?v ?u)
       (esta-en ?m ?u)

@@ -49,8 +49,6 @@ Si se quiere minimizar el n�mero de timesteps hay que usar adem�s la etiquet
 
 Tambi�n se puede probar la versi�n lpg-td (ejecutable LPG-td 1.4).
 
-
-
 ============================================================================================
 
 OPTIC planner
@@ -74,6 +72,7 @@ Si est�is en una m�quina de 64 bits, tened en cuenta las instrucciones indic
 Ejecuci�n OPTIC
 
 > ./optic-clp <domain.pddl> <problem.pddl>
+
 
 
 OPTIC es un planficador de orden parcial. Devuelve una primera soluci�n (determinista) y luego intenta mejorarla. Ejemplo:
@@ -148,3 +147,11 @@ LPG -> plan con acciones en paralelo, búsqueda en un grafo (puede ser una búsq
     -n 3 refina 3 veces (se puede cambiar) la primera solución encontrada
 
 OPTIC -> plan con acciones en paralelo, búsqueda en espacio de planes (árbol)
+
+
+EJECUTAR:
+
+
+./lpg -o airport_domain.pddl -f problem.pddl -n 8 -out plan_lpg
+
+./optic-clp airport_domain.pddl problem.pddl > plan_optic.sol

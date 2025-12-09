@@ -101,11 +101,6 @@
     (libre m1)
     (libre m2)
 
-    (not (libre v1))
-    (not (libre v2))
-    (not (libre v3))
-    (not (libre v4))
-    (not (libre v5))
 
     ; dos máquinas en la zona de recogida
     (esta-en m1 puerta1)

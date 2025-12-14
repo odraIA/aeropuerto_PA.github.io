@@ -172,6 +172,24 @@ svg {
   background: #a7b4c9;
   cursor: not-allowed;
 }
+.state-card {
+  border: 1px solid #e0e4ec;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: #f9fbff;
+}
+.state-card h3 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  color: #243c64;
+}
+.state-card ul {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 13px;
+  color: #1b2738;
+}
 .action-log {
   max-height: 360px;
   overflow-y: auto;
@@ -245,6 +263,7 @@ svg {
       <span class="badge equipaje">E</span><span>Equipaje</span>
       <span class="badge suspicious">S</span><span>Equipaje sospechoso</span>
     </div>
+    <div id="state-summary"></div>
     <div class="action-log" aria-label="Secuencia de acciones">
       <ul id="log"></ul>
     </div>
@@ -276,7 +295,20 @@ const edges = [
 const payload = PAYLOAD_DATA;
 
 let actions = payload.actions;
-let baseState = payload.initialState;
+let baseState = normalizeState(payload.initialState);
+
+function normalizeState(state){
+  const st = cloneState(state);
+  Object.entries(st).forEach(([name,obj])=>{
+    if(!obj.location && obj.attachedTo && st[obj.attachedTo]){
+      obj.location = st[obj.attachedTo].location || null;
+    }
+    if(!obj.location && obj.container && st[obj.container]){
+      obj.location = st[obj.container].location || null;
+    }
+  });
+  return st;
+}
 
 function locationFor(objName, state){
   const obj = state[objName];
@@ -537,6 +569,47 @@ function renderTokens(svg, state){
   });
 }
 
+function renderSummary(state){
+  const wrapper = document.getElementById('state-summary');
+  wrapper.innerHTML = '';
+  const perLocation = {};
+  Object.entries(state).forEach(([name,obj])=>{
+    const loc = locationFor(name, state) || 'sin-ubicacion';
+    if(!perLocation[loc]) perLocation[loc] = [];
+    perLocation[loc].push({name, obj});
+  });
+  Object.entries(perLocation).forEach(([loc, list])=>{
+    const card = document.createElement('div');
+    card.className = 'state-card';
+    const title = document.createElement('h3');
+    const label = nodes[loc]?.label || loc;
+    title.textContent = label;
+    card.appendChild(title);
+    const ul = document.createElement('ul');
+    list
+      .sort((a,b)=>a.obj.type.localeCompare(b.obj.type) || a.name.localeCompare(b.name))
+      .forEach(({name,obj})=>{
+        const li = document.createElement('li');
+        const badge = document.createElement('span');
+        const badgeKind = obj.type === 'equipaje' ? (obj.status === 'sospechoso' ? 'suspicious' : 'equipaje') : obj.type;
+        badge.className = `badge ${badgeKind}`;
+        badge.textContent = obj.type[0].toUpperCase();
+        li.appendChild(badge);
+        const text = document.createTextNode(` ${name}`);
+        li.appendChild(text);
+        if(obj.container){
+          li.appendChild(document.createTextNode(` en ${obj.container}`));
+        }
+        if(obj.attachedTo){
+          li.appendChild(document.createTextNode(` conectado a ${obj.attachedTo}`));
+        }
+        ul.appendChild(li);
+      });
+    card.appendChild(ul);
+    wrapper.appendChild(card);
+  });
+}
+
 function populateLog(log){
   const initial = document.createElement('li');
   initial.id = 'action--1';
@@ -555,6 +628,7 @@ function update(step){
   drawMap(svg);
   const state = computeState(step);
   renderTokens(svg, state);
+  renderSummary(state);
   document.getElementById('status').textContent = step < 0 ? 'Estado inicial' : `Acción ${step + 1} / ${actions.length}`;
   document.querySelectorAll('.action-log li').forEach(li=>li.classList.remove('active'));
   const active = document.getElementById(`action-${step}`);

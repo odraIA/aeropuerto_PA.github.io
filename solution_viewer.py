@@ -128,11 +128,11 @@ main {
 }
 svg {
   width: 100%;
-  height: 520px;
-  background: #fff;
+  height: 660px;
+  background: #fdfefe;
   border: 1px solid #d6d9e1;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
 }
 .node {
   fill: #e8edf6;
@@ -144,9 +144,11 @@ svg {
   fill: #1b2738;
   font-weight: 600;
 }
-.connector {
-  stroke: #b4bfd3;
-  stroke-width: 3;
+.road {
+  stroke: #9aaac7;
+  stroke-width: 9;
+  stroke-linecap: round;
+  opacity: 0.9;
 }
 #panel {
   background: #fff;
@@ -228,7 +230,7 @@ svg {
 </header>
 <main>
   <div>
-    <svg id="map" viewBox="0 0 760 520" aria-label="Plano del aeropuerto"></svg>
+    <svg id="map" viewBox="0 0 1040 660" aria-label="Plano del aeropuerto"></svg>
   </div>
   <div id="panel">
     <div class="controls">
@@ -250,17 +252,17 @@ svg {
 </main>
 <script>
 const nodes = {
-  facturacion: { x: 220, y: 80, label: 'Zona de facturación' },
-  recogida: { x: 540, y: 80, label: 'Recogida de equipajes' },
-  inspeccion: { x: 380, y: 180, label: 'Oficina de inspección' },
-  puerta1: { x: 200, y: 420, label: 'Puerta1' },
-  puerta2: { x: 220, y: 220, label: 'Puerta2' },
-  puerta3: { x: 260, y: 320, label: 'Puerta3' },
-  puerta4: { x: 160, y: 300, label: 'Puerta4' },
-  puerta5: { x: 600, y: 420, label: 'Puerta5' },
-  puerta6: { x: 560, y: 220, label: 'Puerta6' },
-  puerta7: { x: 520, y: 320, label: 'Puerta7' },
-  puerta8: { x: 640, y: 300, label: 'Puerta8' }
+  facturacion: { x: 180, y: 120, label: 'Zona de facturación' },
+  recogida: { x: 860, y: 120, label: 'Recogida de equipajes' },
+  inspeccion: { x: 520, y: 260, label: 'Oficina de inspección' },
+  puerta1: { x: 200, y: 560, label: 'Puerta1' },
+  puerta2: { x: 320, y: 340, label: 'Puerta2' },
+  puerta3: { x: 320, y: 500, label: 'Puerta3' },
+  puerta4: { x: 200, y: 420, label: 'Puerta4' },
+  puerta5: { x: 860, y: 560, label: 'Puerta5' },
+  puerta6: { x: 700, y: 340, label: 'Puerta6' },
+  puerta7: { x: 700, y: 500, label: 'Puerta7' },
+  puerta8: { x: 840, y: 420, label: 'Puerta8' }
 };
 
 const edges = [
@@ -348,13 +350,21 @@ function drawMap(svg){
   edges.forEach(([a,b])=>{
     const na = nodes[a];
     const nb = nodes[b];
-    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-    line.setAttribute('x1', na.x);
-    line.setAttribute('y1', na.y);
-    line.setAttribute('x2', nb.x);
-    line.setAttribute('y2', nb.y);
-    line.setAttribute('class','connector');
-    svg.appendChild(line);
+    const road = document.createElementNS('http://www.w3.org/2000/svg','line');
+    road.setAttribute('x1', na.x);
+    road.setAttribute('y1', na.y);
+    road.setAttribute('x2', nb.x);
+    road.setAttribute('y2', nb.y);
+    road.setAttribute('class','road');
+    svg.appendChild(road);
+
+    const dash = document.createElementNS('http://www.w3.org/2000/svg','line');
+    dash.setAttribute('x1', na.x);
+    dash.setAttribute('y1', na.y);
+    dash.setAttribute('x2', nb.x);
+    dash.setAttribute('y2', nb.y);
+    dash.setAttribute('class','road-dash');
+    svg.appendChild(dash);
   });
   Object.entries(nodes).forEach(([name,info])=>{
     const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');

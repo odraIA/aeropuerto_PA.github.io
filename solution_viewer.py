@@ -146,8 +146,15 @@ svg {
 }
 .road {
   stroke: #9aaac7;
-  stroke-width: 9;
+  stroke-width: 10;
   stroke-linecap: round;
+  opacity: 0.9;
+}
+.road-dash {
+  stroke: #fdfefe;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 14 10;
   opacity: 0.9;
 }
 #panel {
@@ -229,14 +236,14 @@ svg {
   font-weight: 700;
 }
 .connection-line { stroke: #8ea1c7; stroke-dasharray: 5 3; stroke-width: 2; }
-.machine-body { fill: #f6c344; stroke: #243c64; stroke-width: 2; }
-.machine-cabin { fill: #ffe08a; stroke: #243c64; stroke-width: 1.5; }
-.wagon-body { fill: #71c4e8; stroke: #1b2738; stroke-width: 2; }
-.wagon-top { fill: #9dd8f3; stroke: #1b2738; stroke-width: 1.5; }
+.machine-body { fill: #f6c344; stroke: #243c64; stroke-width: 1.8; }
+.machine-cabin { fill: #ffe08a; stroke: #243c64; stroke-width: 1.4; }
+.wagon-body { fill: #71c4e8; stroke: #1b2738; stroke-width: 1.8; }
+.wagon-top { fill: #9dd8f3; stroke: #1b2738; stroke-width: 1.4; }
 .wheel { fill: #1b2738; }
 .bag { stroke: #1b2738; stroke-width: 1.5; }
 .bag.normal .bag-body { fill: #67d49a; }
-.bag.suspicious .bag-body { fill: #e87272; }
+.bag.suspicious .bag-body { fill: #ff4d4f; }
 .bag.checked .bag-body { filter: brightness(1.05); }
 .bag-handle { fill: none; stroke: #1b2738; stroke-width: 1.5; }
 </style>
@@ -271,17 +278,17 @@ svg {
 </main>
 <script>
 const nodes = {
-  facturacion: { x: 180, y: 120, label: 'Zona de facturación' },
-  recogida: { x: 860, y: 120, label: 'Recogida de equipajes' },
-  inspeccion: { x: 520, y: 260, label: 'Oficina de inspección' },
-  puerta1: { x: 200, y: 560, label: 'Puerta1' },
-  puerta2: { x: 320, y: 340, label: 'Puerta2' },
-  puerta3: { x: 320, y: 500, label: 'Puerta3' },
-  puerta4: { x: 200, y: 420, label: 'Puerta4' },
-  puerta5: { x: 860, y: 560, label: 'Puerta5' },
-  puerta6: { x: 700, y: 340, label: 'Puerta6' },
-  puerta7: { x: 700, y: 500, label: 'Puerta7' },
-  puerta8: { x: 840, y: 420, label: 'Puerta8' }
+  facturacion: { x: 150, y: 140, label: 'Zona de facturación' },
+  inspeccion: { x: 520, y: 180, label: 'Oficina de inspección' },
+  recogida: { x: 890, y: 140, label: 'Recogida de equipajes' },
+  puerta1: { x: 160, y: 520, label: 'Puerta1' },
+  puerta2: { x: 300, y: 300, label: 'Puerta2' },
+  puerta3: { x: 320, y: 520, label: 'Puerta3' },
+  puerta4: { x: 210, y: 380, label: 'Puerta4' },
+  puerta5: { x: 890, y: 520, label: 'Puerta5' },
+  puerta6: { x: 740, y: 300, label: 'Puerta6' },
+  puerta7: { x: 720, y: 520, label: 'Puerta7' },
+  puerta8: { x: 830, y: 380, label: 'Puerta8' }
 };
 
 const edges = [
@@ -314,6 +321,7 @@ function locationFor(objName, state){
   const obj = state[objName];
   if(!obj) return null;
   if(obj.location) return obj.location;
+  if(obj.attachedTo && state[obj.attachedTo]) return locationFor(obj.attachedTo, state);
   if(obj.container && state[obj.container]) return locationFor(obj.container, state);
   return null;
 }
@@ -431,6 +439,7 @@ function renderTokens(svg, state){
 
   const machinePositions = new Map();
   const wagonPositions = new Map();
+  const drawnWagons = new Set();
 
   function slot(baseX, total, idx, spacing=130){
     return baseX + (idx - (total-1)/2) * spacing;
@@ -439,26 +448,26 @@ function renderTokens(svg, state){
   function drawMachine(x,y,label){
     const group = document.createElementNS('http://www.w3.org/2000/svg','g');
     const body = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    body.setAttribute('x', x-32); body.setAttribute('y', y-18);
-    body.setAttribute('width', 64); body.setAttribute('height', 36);
+    body.setAttribute('x', x-28); body.setAttribute('y', y-22);
+    body.setAttribute('width', 56); body.setAttribute('height', 28);
     body.setAttribute('rx', 8); body.setAttribute('class','machine-body');
     group.appendChild(body);
     const cabin = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    cabin.setAttribute('x', x-12); cabin.setAttribute('y', y-30);
-    cabin.setAttribute('width', 24); cabin.setAttribute('height', 16);
+    cabin.setAttribute('x', x-12); cabin.setAttribute('y', y-32);
+    cabin.setAttribute('width', 22); cabin.setAttribute('height', 12);
     cabin.setAttribute('rx', 4); cabin.setAttribute('class','machine-cabin');
     group.appendChild(cabin);
-    [ -18, 18].forEach(offset=>{
+    [ -16, 16].forEach(offset=>{
       const wheel = document.createElementNS('http://www.w3.org/2000/svg','circle');
       wheel.setAttribute('cx', x+offset);
-      wheel.setAttribute('cy', y+18);
-      wheel.setAttribute('r', 6);
+      wheel.setAttribute('cy', y+6);
+      wheel.setAttribute('r', 5);
       wheel.setAttribute('class','wheel');
       group.appendChild(wheel);
     });
     const text = document.createElementNS('http://www.w3.org/2000/svg','text');
     text.setAttribute('x', x);
-    text.setAttribute('y', y+34);
+    text.setAttribute('y', y-24);
     text.setAttribute('text-anchor','middle');
     text.setAttribute('class','entity-label');
     text.textContent = label.toUpperCase();
@@ -469,26 +478,26 @@ function renderTokens(svg, state){
   function drawWagon(x,y,label){
     const group = document.createElementNS('http://www.w3.org/2000/svg','g');
     const body = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    body.setAttribute('x', x-32); body.setAttribute('y', y-14);
-    body.setAttribute('width', 64); body.setAttribute('height', 28);
+    body.setAttribute('x', x-28); body.setAttribute('y', y-18);
+    body.setAttribute('width', 56); body.setAttribute('height', 24);
     body.setAttribute('rx', 4); body.setAttribute('class','wagon-body');
     group.appendChild(body);
     const top = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    top.setAttribute('x', x-28); top.setAttribute('y', y-22);
-    top.setAttribute('width', 56); top.setAttribute('height', 10);
+    top.setAttribute('x', x-24); top.setAttribute('y', y-26);
+    top.setAttribute('width', 48); top.setAttribute('height', 10);
     top.setAttribute('rx', 4); top.setAttribute('class','wagon-top');
     group.appendChild(top);
-    [-18, 18].forEach(offset=>{
+    [-16, 16].forEach(offset=>{
       const wheel = document.createElementNS('http://www.w3.org/2000/svg','circle');
       wheel.setAttribute('cx', x+offset);
-      wheel.setAttribute('cy', y+18);
-      wheel.setAttribute('r', 6);
+      wheel.setAttribute('cy', y+6);
+      wheel.setAttribute('r', 5);
       wheel.setAttribute('class','wheel');
       group.appendChild(wheel);
     });
     const text = document.createElementNS('http://www.w3.org/2000/svg','text');
     text.setAttribute('x', x);
-    text.setAttribute('y', y+34);
+    text.setAttribute('y', y-18);
     text.setAttribute('text-anchor','middle');
     text.setAttribute('class','entity-label');
     text.textContent = label.toUpperCase();
@@ -520,39 +529,45 @@ function renderTokens(svg, state){
 
   Object.entries(perLocation).forEach(([loc, groups])=>{
     const base = nodes[loc];
-    const baseY = base.y + 55;
+    const baseLineY = base.y + 20;
+    const bagLineY = base.y - 6;
+    const wagonSpacing = 70;
     groups.machines.forEach((entry, idx)=>{
-      const x = slot(base.x, groups.machines.length, idx, 140);
-      drawMachine(x, baseY, entry.name);
-      machinePositions.set(entry.name, {x, y: baseY});
-      const attached = groups.vagones.filter(v=>v.obj.attachedTo === entry.name);
-      attached.forEach((wag, widx)=>{
-        const wx = x + (widx+1)*80;
-        const wy = baseY + 70;
-        drawWagon(wx, wy, wag.name);
-        wagonPositions.set(wag.name, {x: wx, y: wy});
-        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-        line.setAttribute('x1', x);
-        line.setAttribute('y1', baseY+12);
-        line.setAttribute('x2', wx);
-        line.setAttribute('y2', wy-16);
-        line.setAttribute('class','connection-line');
-        svg.appendChild(line);
-      });
+      const x = slot(base.x, groups.machines.length, idx, 130);
+      drawMachine(x, baseLineY, entry.name);
+      machinePositions.set(entry.name, {x, y: baseLineY});
+      const drawChain = (anchorName, anchorX)=>{
+        const attached = groups.vagones.filter(v=>v.obj.attachedTo === anchorName);
+        attached.forEach((wag, widx)=>{
+          const wx = anchorX + (widx+1)*wagonSpacing;
+          drawWagon(wx, baseLineY, wag.name);
+          wagonPositions.set(wag.name, {x: wx, y: baseLineY});
+          drawnWagons.add(wag.name);
+          const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+          line.setAttribute('x1', anchorX);
+          line.setAttribute('y1', baseLineY);
+          line.setAttribute('x2', wx);
+          line.setAttribute('y2', baseLineY);
+          line.setAttribute('class','connection-line');
+          svg.appendChild(line);
+          drawChain(wag.name, wx);
+        });
+      };
+      drawChain(entry.name, x);
     });
 
-    const freeWagons = groups.vagones.filter(v=>!v.obj.attachedTo || !machinePositions.has(v.obj.attachedTo));
+    const freeWagons = groups.vagones.filter(v=>!drawnWagons.has(v.name));
     freeWagons.forEach((wag, idx)=>{
-      const wx = slot(base.x, freeWagons.length, idx, 120);
-      const wy = baseY + 70;
+      const wx = slot(base.x, freeWagons.length, idx, 110);
+      const wy = baseLineY;
       drawWagon(wx, wy, wag.name);
       wagonPositions.set(wag.name, {x: wx, y: wy});
     });
 
     const looseBags = groups.equipajes.filter(b=>!b.obj.container);
     looseBags.forEach((bag, idx)=>{
-      const bx = slot(base.x, looseBags.length, idx, 80);
-      const by = baseY - 14;
+      const bx = slot(base.x, looseBags.length, idx, 70);
+      const by = bagLineY;
       drawBag(bx, by, bag.name, bag.obj.status, bag.obj.checked);
     });
   });

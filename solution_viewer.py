@@ -150,12 +150,6 @@ svg {
   stroke-linecap: round;
   opacity: 0.9;
 }
-.road-dash {
-  stroke: #eef1f6;
-  stroke-width: 3;
-  stroke-dasharray: 10 10;
-  stroke-linecap: round;
-}
 #panel {
   background: #fff;
   border: 1px solid #d6d9e1;
@@ -284,14 +278,11 @@ const payload = PAYLOAD_DATA;
 let actions = payload.actions;
 let baseState = payload.initialState;
 
-function locationFor(objName, state, visited=new Set()){
-  if(visited.has(objName)) return null;
-  visited.add(objName);
+function locationFor(objName, state){
   const obj = state[objName];
   if(!obj) return null;
   if(obj.location) return obj.location;
-  if(obj.container && state[obj.container]) return locationFor(obj.container, state, visited);
-  if(obj.attachedTo && state[obj.attachedTo]) return locationFor(obj.attachedTo, state, visited);
+  if(obj.container && state[obj.container]) return locationFor(obj.container, state);
   return null;
 }
 
@@ -409,7 +400,7 @@ function renderTokens(svg, state){
   const machinePositions = new Map();
   const wagonPositions = new Map();
 
-  function slot(baseX, total, idx, spacing=150){
+  function slot(baseX, total, idx, spacing=130){
     return baseX + (idx - (total-1)/2) * spacing;
   }
 
@@ -497,9 +488,9 @@ function renderTokens(svg, state){
 
   Object.entries(perLocation).forEach(([loc, groups])=>{
     const base = nodes[loc];
-    const baseY = base.y + 80;
+    const baseY = base.y + 55;
     groups.machines.forEach((entry, idx)=>{
-      const x = slot(base.x, groups.machines.length, idx, 170);
+      const x = slot(base.x, groups.machines.length, idx, 140);
       drawMachine(x, baseY, entry.name);
       machinePositions.set(entry.name, {x, y: baseY});
       const attached = groups.vagones.filter(v=>v.obj.attachedTo === entry.name);
@@ -520,7 +511,7 @@ function renderTokens(svg, state){
 
     const freeWagons = groups.vagones.filter(v=>!v.obj.attachedTo || !machinePositions.has(v.obj.attachedTo));
     freeWagons.forEach((wag, idx)=>{
-      const wx = slot(base.x, freeWagons.length, idx, 150);
+      const wx = slot(base.x, freeWagons.length, idx, 120);
       const wy = baseY + 70;
       drawWagon(wx, wy, wag.name);
       wagonPositions.set(wag.name, {x: wx, y: wy});
@@ -528,7 +519,7 @@ function renderTokens(svg, state){
 
     const looseBags = groups.equipajes.filter(b=>!b.obj.container);
     looseBags.forEach((bag, idx)=>{
-      const bx = slot(base.x, looseBags.length, idx, 100);
+      const bx = slot(base.x, looseBags.length, idx, 80);
       const by = baseY - 14;
       drawBag(bx, by, bag.name, bag.obj.status, bag.obj.checked);
     });

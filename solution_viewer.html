@@ -111,24 +111,6 @@ svg {
   background: #a7b4c9;
   cursor: not-allowed;
 }
-.state-card {
-  border: 1px solid #e0e4ec;
-  border-radius: 6px;
-  padding: 8px 10px;
-  margin-bottom: 6px;
-  background: #f9fbff;
-}
-.state-card h3 {
-  margin: 0 0 4px 0;
-  font-size: 14px;
-  color: #243c64;
-}
-.state-card ul {
-  margin: 0;
-  padding-left: 16px;
-  font-size: 13px;
-  color: #1b2738;
-}
 .action-log {
   max-height: 360px;
   overflow-y: auto;
@@ -235,7 +217,6 @@ svg {
       <span class="badge equipaje">E</span><span>Equipaje</span>
       <span class="badge suspicious">S</span><span>Equipaje sospechoso</span>
     </div>
-    <div id="state-summary"></div>
     <div class="literal-panel" aria-label="Literales tras la acción">
       <h3>Literales verdaderos</h3>
       <ul id="literalList" class="literal-list"></ul>
@@ -279,7 +260,16 @@ let currentProblemName = payload.problemFile;
 let currentStep = -1;
 let problemText = payload.problemText || '';
 let planText = payload.planText || '';
+let staticLiterals = payload.staticLiterals || [];
 const loadedPlans = new Map();
+
+if(staticLiterals.length === 0 && payload.problemText){
+  const parsed = parseInitialStateJS(payload.problemText, payload.objects);
+  payload.initialState = parsed.state;
+  payload.staticLiterals = parsed.staticLiterals;
+  staticLiterals = payload.staticLiterals;
+  baseState = normalizeState(payload.initialState);
+}
 
 function normalizeState(state){
   const st = cloneState(state);
@@ -316,15 +306,15 @@ function computeState(upTo){
 }
 
 function stateToLiterals(state){
-  const literals = [];
+  const literals = new Set(staticLiterals);
   Object.entries(state).forEach(([name, obj])=>{
-    if(obj.location){ literals.push(`esta-en ${name} ${obj.location}`); }
-    if(obj.attachedTo){ literals.push(`enganchado ${name} ${obj.attachedTo}`); }
-    if(obj.container){ literals.push(`en-contenedor ${name} ${obj.container}`); }
-    if(obj.status){ literals.push(`${obj.status} ${name}`); }
-    if(obj.checked){ literals.push(`inspeccionado ${name}`); }
+    if(obj.location){ literals.add(`esta-en ${name} ${obj.location}`); }
+    if(obj.attachedTo){ literals.add(`enganchado ${name} ${obj.attachedTo}`); }
+    if(obj.container){ literals.add(`en-contenedor ${name} ${obj.container}`); }
+    if(obj.status){ literals.add(`${obj.status} ${name}`); }
+    if(obj.checked){ literals.add(`inspeccionado ${name}`); }
   });
-  return literals.sort();
+  return [...literals].sort();
 }
 
 function applyAction(st, action){
@@ -573,51 +563,10 @@ function renderTokens(svg, state){
   });
 }
 
-function renderSummary(state){
-  const wrapper = document.getElementById('state-summary');
-  wrapper.innerHTML = '';
-  const perLocation = {};
-  Object.entries(state).forEach(([name,obj])=>{
-    const loc = locationFor(name, state) || 'sin-ubicacion';
-    if(!perLocation[loc]) perLocation[loc] = [];
-    perLocation[loc].push({name, obj});
-  });
-  Object.entries(perLocation).forEach(([loc, list])=>{
-    const card = document.createElement('div');
-    card.className = 'state-card';
-    const title = document.createElement('h3');
-    const label = nodes[loc]?.label || loc;
-    title.textContent = label;
-    card.appendChild(title);
-    const ul = document.createElement('ul');
-    list
-      .sort((a,b)=>a.obj.type.localeCompare(b.obj.type) || a.name.localeCompare(b.name))
-      .forEach(({name,obj})=>{
-        const li = document.createElement('li');
-        const badge = document.createElement('span');
-        const badgeKind = obj.type === 'equipaje' ? (obj.status === 'sospechoso' ? 'suspicious' : 'equipaje') : obj.type;
-        badge.className = `badge ${badgeKind}`;
-        badge.textContent = obj.type[0].toUpperCase();
-        li.appendChild(badge);
-        const text = document.createTextNode(` ${name}`);
-        li.appendChild(text);
-        if(obj.container){
-          li.appendChild(document.createTextNode(` en ${obj.container}`));
-        }
-        if(obj.attachedTo){
-          li.appendChild(document.createTextNode(` conectado a ${obj.attachedTo}`));
-        }
-        ul.appendChild(li);
-      });
-    card.appendChild(ul);
-    wrapper.appendChild(card);
-  });
-}
-
-function renderLiterals(state, previousState){
-  const list = document.getElementById('literalList');
-  const changes = document.getElementById('literalChanges');
-  list.innerHTML = '';
+  function renderLiterals(state, previousState){
+    const list = document.getElementById('literalList');
+    const changes = document.getElementById('literalChanges');
+    list.innerHTML = '';
   changes.innerHTML = '';
   const current = stateToLiterals(state);
   const prev = previousState ? new Set(stateToLiterals(previousState)) : new Set();
@@ -674,7 +623,6 @@ function update(step){
   const state = computeState(step);
   const previous = step <= -1 ? null : computeState(step-1);
   renderTokens(svg, state);
-  renderSummary(state);
   renderLiterals(state, previous);
   document.getElementById('status').textContent = step < 0 ? 'Estado inicial' : `Acción ${step + 1} / ${actions.length}`;
   document.querySelectorAll('.action-log li').forEach(li=>li.classList.remove('active'));
@@ -763,6 +711,12 @@ function init(){
 function applyPayload(pl){
   actions = pl.actions;
   baseState = normalizeState(pl.initialState);
+  staticLiterals = pl.staticLiterals || [];
+  if(staticLiterals.length === 0 && pl.problemText){
+    const parsed = parseInitialStateJS(pl.problemText, pl.objects);
+    baseState = normalizeState(parsed.state);
+    staticLiterals = parsed.staticLiterals;
+  }
   currentPlanName = pl.planFile;
   currentProblemName = pl.problemFile;
   planText = pl.planText || planText;
@@ -808,7 +762,7 @@ function refreshPlanSelect(select){
 
 function buildPayloadFromTexts(planTxt, problemTxt, planName, problemName){
   const objects = parseObjectsJS(problemTxt);
-  const initialState = parseInitialStateJS(problemTxt, objects);
+  const { state: initialState, staticLiterals: parsedStaticLiterals } = parseInitialStateJS(problemTxt, objects);
   const acts = parsePlanJS(planTxt);
   return {
     planFile: planName,
@@ -817,6 +771,7 @@ function buildPayloadFromTexts(planTxt, problemTxt, planName, problemName){
     problemText: problemTxt,
     objects,
     initialState,
+    staticLiterals: parsedStaticLiterals,
     actions: acts,
   };
 }
@@ -849,11 +804,12 @@ function parseObjectsJS(problemText){
 
 function parseInitialStateJS(problemText, objects){
   const initialState = {};
+  const staticFacts = new Set();
   Object.entries(objects).forEach(([name, type])=>{
     initialState[name] = {type, location: null, container: null, attachedTo: null, status: '', checked: false};
   });
   const initMatch = problemText.match(/\(:init([\s\S]*?)\)\s*\(:goal/i);
-  if(!initMatch){ return initialState; }
+  if(!initMatch){ return {state: initialState, staticLiterals: []}; }
   const block = initMatch[1];
   block.split(/\n/).forEach(line=>{
     const clean = line.split(';')[0].trim();
@@ -862,13 +818,13 @@ function parseInitialStateJS(problemText, objects){
     if(fact.length < 2){ return; }
     const [pred, subj, target] = fact;
     const entry = initialState[subj];
-    if(!entry){ return; }
-    if(pred === 'esta-en' && target){ entry.location = target; }
-    else if(pred === 'enganchado' && target){ entry.attachedTo = target; }
-    else if(pred === 'sospechoso'){ entry.status = 'sospechoso'; }
-    else if(pred === 'normal'){ entry.status = 'normal'; }
+    if(pred === 'esta-en' && entry && target){ entry.location = target; }
+    else if(pred === 'enganchado' && entry && target){ entry.attachedTo = target; }
+    else if(pred === 'sospechoso' && entry){ entry.status = 'sospechoso'; staticFacts.add(`sospechoso ${subj}`); }
+    else if(pred === 'normal' && entry){ entry.status = 'normal'; staticFacts.add(`normal ${subj}`); }
+    else if(pred !== 'siguiente'){ staticFacts.add(fact.join(' ')); }
   });
-  return initialState;
+  return {state: initialState, staticLiterals: [...staticFacts].sort()};
 }
 
 function parsePlanJS(planText){

@@ -1,0 +1,14 @@
+
+; Version LPG-td-1.0
+; Seed 107967645
+; Command line: ./lpg -o airport_domain.pddl -f problem_imp.pddl -n 5 -out plan_imp_lpg 
+; Problem problem_imp.pddl
+; Actions having STRIPS duration
+; Time 0.00
+; Search time 0.00
+; Parsing time 0.00
+; Mutex time 0.00
+; NrActions 0
+
+
+no solution

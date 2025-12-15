@@ -76,14 +76,22 @@ def parse_initial_state(problem_text, objects):
 
 def parse_plan(plan_text):
     actions = []
+    step_regex = re.compile(r"\s*([\d\.]+):\s*\(([^\)]+)\)")
     for line in plan_text.splitlines():
-        step_match = re.match(r"\s*(\d+):\s*\(([^\)]+)\)", line)
+        step_match = step_regex.match(line)
         if not step_match:
             continue
-        idx = int(step_match.group(1))
         raw_action = step_match.group(2).strip()
         parts = raw_action.lower().split()
-        actions.append({"index": idx, "name": parts[0], "args": parts[1:], "raw": raw_action})
+        actions.append(
+            {
+                "index": len(actions),
+                "time": float(step_match.group(1)),
+                "name": parts[0],
+                "args": parts[1:],
+                "raw": raw_action,
+            }
+        )
     return actions
 
 def build_payload(plan_path, problem_path):
@@ -95,6 +103,8 @@ def build_payload(plan_path, problem_path):
     return {
         "planFile": str(plan_path),
         "problemFile": str(problem_path),
+        "planText": plan_text,
+        "problemText": problem_text,
         "objects": objects,
         "initialState": initial_state,
         "actions": actions,
@@ -133,6 +143,41 @@ svg {
   border: 1px solid #d6d9e1;
   border-radius: 12px;
   box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+}
+.file-loader {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+  background: #fff;
+  border: 1px solid #d6d9e1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+}
+.file-loader label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: #1b2738;
+  gap: 4px;
+}
+.file-loader small {
+  color: #52607a;
+}
+.file-loader input, .file-loader select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #cfd6e3;
+  font-size: 13px;
+}
+.file-loader button {
+  background: #243c64;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
 }
 .node {
   fill: #e8edf6;
@@ -246,6 +291,17 @@ svg {
 .bag.suspicious .bag-body { fill: #ff4d4f; }
 .bag.checked .bag-body { filter: brightness(1.05); }
 .bag-handle { fill: none; stroke: #1b2738; stroke-width: 1.5; }
+.literal-panel {
+  border: 1px solid #e0e4ec;
+  border-radius: 6px;
+  padding: 10px;
+  background: #fff;
+}
+.literal-panel h3 { margin: 0 0 6px 0; color: #243c64; }
+.literal-list { list-style: none; padding: 0; margin: 0; max-height: 180px; overflow-y: auto; }
+.literal-list li { padding: 4px 0; border-bottom: 1px solid #f0f3f8; font-size: 13px; }
+.literal-added { color: #0b8b3d; font-weight: 600; }
+.literal-removed { color: #c1272d; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -258,6 +314,28 @@ svg {
     <svg id="map" viewBox="0 0 1040 660" aria-label="Plano del aeropuerto"></svg>
   </div>
   <div id="panel">
+    <div class="file-loader" aria-label="Selector de soluciones">
+      <label>
+        Carpeta con soluciones
+        <input type="file" id="folderInput" webkitdirectory multiple>
+        <small>Se detectarán automáticamente los ficheros de plan (.sol, .soln)</small>
+      </label>
+      <label>
+        Problema PDDL
+        <input type="file" id="problemInput" accept=".pddl">
+      </label>
+      <label>
+        Plan individual
+        <input type="file" id="planInput" accept=".sol,.SOL,.soln,.plan,.txt">
+      </label>
+      <label>
+        Plan seleccionado
+        <select id="planSelect"></select>
+      </label>
+      <div>
+        <button id="useLoaded">Usar plan seleccionado</button>
+      </div>
+    </div>
     <div class="controls">
       <button id="back">⏮️ Atrás</button>
       <button id="play">▶️ Reproducir</button>
@@ -271,6 +349,12 @@ svg {
       <span class="badge suspicious">S</span><span>Equipaje sospechoso</span>
     </div>
     <div id="state-summary"></div>
+    <div class="literal-panel" aria-label="Literales tras la acción">
+      <h3>Literales verdaderos</h3>
+      <ul id="literalList" class="literal-list"></ul>
+      <h4>Cambios de esta acción</h4>
+      <ul id="literalChanges" class="literal-list"></ul>
+    </div>
     <div class="action-log" aria-label="Secuencia de acciones">
       <ul id="log"></ul>
     </div>
@@ -303,6 +387,12 @@ const payload = PAYLOAD_DATA;
 
 let actions = payload.actions;
 let baseState = normalizeState(payload.initialState);
+let currentPlanName = payload.planFile;
+let currentProblemName = payload.problemFile;
+let currentStep = -1;
+let problemText = payload.problemText || '';
+let planText = payload.planText || '';
+const loadedPlans = new Map();
 
 function normalizeState(state){
   const st = cloneState(state);
@@ -336,6 +426,18 @@ function computeState(upTo){
     applyAction(st, actions[i]);
   }
   return st;
+}
+
+function stateToLiterals(state){
+  const literals = [];
+  Object.entries(state).forEach(([name, obj])=>{
+    if(obj.location){ literals.push(`esta-en ${name} ${obj.location}`); }
+    if(obj.attachedTo){ literals.push(`enganchado ${name} ${obj.attachedTo}`); }
+    if(obj.container){ literals.push(`en-contenedor ${name} ${obj.container}`); }
+    if(obj.status){ literals.push(`${obj.status} ${name}`); }
+    if(obj.checked){ literals.push(`inspeccionado ${name}`); }
+  });
+  return literals.sort();
 }
 
 function applyAction(st, action){
@@ -625,6 +727,47 @@ function renderSummary(state){
   });
 }
 
+function renderLiterals(state, previousState){
+  const list = document.getElementById('literalList');
+  const changes = document.getElementById('literalChanges');
+  list.innerHTML = '';
+  changes.innerHTML = '';
+  const current = stateToLiterals(state);
+  const prev = previousState ? new Set(stateToLiterals(previousState)) : new Set();
+  const currentSet = new Set(current);
+  const added = current.filter(lit => !prev.has(lit));
+  const removed = [...prev].filter(lit => !currentSet.has(lit));
+
+  current.forEach(lit=>{
+    const li = document.createElement('li');
+    if(prev.size === 0 || added.includes(lit)){
+      li.className = 'literal-added';
+    }
+    li.textContent = lit;
+    list.appendChild(li);
+  });
+
+  if(added.length === 0 && removed.length === 0){
+    const li = document.createElement('li');
+    li.textContent = 'Sin cambios en esta acción';
+    changes.appendChild(li);
+    return;
+  }
+
+  added.forEach(lit=>{
+    const li = document.createElement('li');
+    li.className = 'literal-added';
+    li.textContent = `+ ${lit}`;
+    changes.appendChild(li);
+  });
+  removed.forEach(lit=>{
+    const li = document.createElement('li');
+    li.className = 'literal-removed';
+    li.textContent = `- ${lit}`;
+    changes.appendChild(li);
+  });
+}
+
 function populateLog(log){
   const initial = document.createElement('li');
   initial.id = 'action--1';
@@ -642,8 +785,10 @@ function update(step){
   const svg = document.getElementById('map');
   drawMap(svg);
   const state = computeState(step);
+  const previous = step <= -1 ? null : computeState(step-1);
   renderTokens(svg, state);
   renderSummary(state);
+  renderLiterals(state, previous);
   document.getElementById('status').textContent = step < 0 ? 'Estado inicial' : `Acción ${step + 1} / ${actions.length}`;
   document.querySelectorAll('.action-log li').forEach(li=>li.classList.remove('active'));
   const active = document.getElementById(`action-${step}`);
@@ -655,20 +800,31 @@ function update(step){
 function init(){
   const log = document.getElementById('log');
   populateLog(log);
-  let step = -1;
+  currentStep = -1;
   let timer = null;
-  update(step);
+  update(currentStep);
   const back = document.getElementById('back');
   const next = document.getElementById('next');
   const play = document.getElementById('play');
+  const planSelect = document.getElementById('planSelect');
+  const folderInput = document.getElementById('folderInput');
+  const planInput = document.getElementById('planInput');
+  const problemInput = document.getElementById('problemInput');
+  const useLoaded = document.getElementById('useLoaded');
+
+  planSelect.innerHTML = '';
+  const baseOpt = document.createElement('option');
+  baseOpt.value = '__initial__';
+  baseOpt.textContent = currentPlanName || 'Plan inicial';
+  planSelect.appendChild(baseOpt);
 
   back.addEventListener('click', ()=>{
-    step = Math.max(-1, step-1);
-    update(step);
+    currentStep = Math.max(-1, currentStep-1);
+    update(currentStep);
   });
   next.addEventListener('click', ()=>{
-    step = Math.min(actions.length-1, step+1);
-    update(step);
+    currentStep = Math.min(actions.length-1, currentStep+1);
+    update(currentStep);
   });
   play.addEventListener('click', ()=>{
     if(timer){
@@ -677,13 +833,167 @@ function init(){
     }
     play.textContent = '⏸️ Pausar';
     timer = setInterval(()=>{
-      if(step >= actions.length -1){
+      if(currentStep >= actions.length -1){
         clearInterval(timer); timer=null; play.textContent='▶️ Reproducir'; return;
       }
-      step +=1;
-      update(step);
+      currentStep +=1;
+      update(currentStep);
     }, 900);
   });
+
+  folderInput.addEventListener('change', async (ev)=>{
+    await cacheFiles(ev.target.files);
+    refreshPlanSelect(planSelect);
+  });
+  planInput.addEventListener('change', async (ev)=>{
+    await cacheFiles(ev.target.files);
+    refreshPlanSelect(planSelect);
+  });
+  problemInput.addEventListener('change', async (ev)=>{
+    const files = ev.target.files;
+    if(files && files[0]){
+      problemText = await files[0].text();
+      currentProblemName = files[0].name;
+    }
+  });
+  useLoaded.addEventListener('click', async ()=>{
+    const selectedKey = planSelect.value;
+    if(selectedKey === '__initial__'){
+      applyPayload(payload);
+      return;
+    }
+    const record = loadedPlans.get(selectedKey);
+    if(!record){ return; }
+    if(!problemText){
+      alert('Carga antes un fichero de problema .pddl para poder interpretar el plan.');
+      return;
+    }
+    const newPayload = buildPayloadFromTexts(record.text, problemText, record.name, currentProblemName || 'problema.pddl');
+    applyPayload(newPayload);
+  });
+}
+
+function applyPayload(pl){
+  actions = pl.actions;
+  baseState = normalizeState(pl.initialState);
+  currentPlanName = pl.planFile;
+  currentProblemName = pl.problemFile;
+  planText = pl.planText || planText;
+  problemText = pl.problemText || problemText;
+  document.querySelector('header p').textContent = `Plan: ${currentPlanName} | Problema: ${currentProblemName}`;
+  document.getElementById('log').innerHTML = '';
+  populateLog(document.getElementById('log'));
+  currentStep = -1;
+  update(currentStep);
+}
+
+async function cacheFiles(fileList){
+  for(const file of fileList){
+    const text = await file.text();
+    const key = file.webkitRelativePath || file.name;
+    loadedPlans.set(key, {name: file.name, text});
+    if(!problemText && file.name.toLowerCase().endsWith('.pddl')){
+      problemText = text;
+      currentProblemName = file.name;
+    }
+  }
+}
+
+function refreshPlanSelect(select){
+  const previous = select.value;
+  select.innerHTML = '';
+  const baseOpt = document.createElement('option');
+  baseOpt.value = '__initial__';
+  baseOpt.textContent = currentPlanName || 'Plan inicial';
+  select.appendChild(baseOpt);
+  [...loadedPlans.entries()]
+    .filter(([key, rec])=> rec.name.match(/\.soln?$|\.plan$|\.txt$/i))
+    .forEach(([key, rec])=>{
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = rec.name;
+      select.appendChild(opt);
+    });
+  if([...select.options].some(opt=>opt.value === previous)){
+    select.value = previous;
+  }
+}
+
+function buildPayloadFromTexts(planTxt, problemTxt, planName, problemName){
+  const objects = parseObjectsJS(problemTxt);
+  const initialState = parseInitialStateJS(problemTxt, objects);
+  const acts = parsePlanJS(planTxt);
+  return {
+    planFile: planName,
+    problemFile: problemName,
+    planText: planTxt,
+    problemText: problemTxt,
+    objects,
+    initialState,
+    actions: acts,
+  };
+}
+
+function parseObjectsJS(problemText){
+  const objects = {};
+  const match = problemText.match(/\(:objects([\s\S]*?)\)/i);
+  if(!match){ return objects; }
+  const block = match[1];
+  const tokens = block
+    .split(/\s+/)
+    .map(t=>t.trim())
+    .filter(Boolean);
+  let buffer = [];
+  let currentType = null;
+  for(let idx=0; idx<tokens.length; idx++){
+    const tok = tokens[idx];
+    if(tok === '-'){
+      currentType = tokens[idx+1];
+      buffer.forEach(name=> objects[name] = currentType || 'object');
+      buffer = [];
+      idx +=1;
+    } else {
+      buffer.push(tok);
+    }
+  }
+  buffer.forEach(name=> objects[name] = currentType || 'object');
+  return objects;
+}
+
+function parseInitialStateJS(problemText, objects){
+  const initialState = {};
+  Object.entries(objects).forEach(([name, type])=>{
+    initialState[name] = {type, location: null, container: null, attachedTo: null, status: '', checked: false};
+  });
+  const initMatch = problemText.match(/\(:init([\s\S]*?)\)\s*\(:goal/i);
+  if(!initMatch){ return initialState; }
+  const block = initMatch[1];
+  block.split(/\n/).forEach(line=>{
+    const clean = line.split(';')[0].trim();
+    if(!clean){ return; }
+    const fact = clean.replace(/[()]/g,'').trim().split(/\s+/);
+    if(fact.length < 2){ return; }
+    const [pred, subj, target] = fact;
+    const entry = initialState[subj];
+    if(!entry){ return; }
+    if(pred === 'esta-en' && target){ entry.location = target; }
+    else if(pred === 'enganchado' && target){ entry.attachedTo = target; }
+    else if(pred === 'sospechoso'){ entry.status = 'sospechoso'; }
+    else if(pred === 'normal'){ entry.status = 'normal'; }
+  });
+  return initialState;
+}
+
+function parsePlanJS(planText){
+  const actions = [];
+  const regex = /\s*([\d\.]+):\s*\(([^\)]+)\)/g;
+  let match;
+  while((match = regex.exec(planText)) !== null){
+    const raw = match[2].trim();
+    const parts = raw.toLowerCase().split(/\s+/);
+    actions.push({index: actions.length, time: parseFloat(match[1]), name: parts[0], args: parts.slice(1), raw});
+  }
+  return actions;
 }
 
 document.addEventListener('DOMContentLoaded', init);

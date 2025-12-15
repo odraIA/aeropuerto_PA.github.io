@@ -31,6 +31,41 @@ svg {
   border-radius: 12px;
   box-shadow: 0 3px 8px rgba(0,0,0,0.08);
 }
+.file-loader {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+  background: #fff;
+  border: 1px solid #d6d9e1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+}
+.file-loader label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: #1b2738;
+  gap: 4px;
+}
+.file-loader small {
+  color: #52607a;
+}
+.file-loader input, .file-loader select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #cfd6e3;
+  font-size: 13px;
+}
+.file-loader button {
+  background: #243c64;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
 .node {
   fill: #e8edf6;
   stroke: #243c64;
@@ -143,6 +178,17 @@ svg {
 .bag.suspicious .bag-body { fill: #ff4d4f; }
 .bag.checked .bag-body { filter: brightness(1.05); }
 .bag-handle { fill: none; stroke: #1b2738; stroke-width: 1.5; }
+.literal-panel {
+  border: 1px solid #e0e4ec;
+  border-radius: 6px;
+  padding: 10px;
+  background: #fff;
+}
+.literal-panel h3 { margin: 0 0 6px 0; color: #243c64; }
+.literal-list { list-style: none; padding: 0; margin: 0; max-height: 180px; overflow-y: auto; }
+.literal-list li { padding: 4px 0; border-bottom: 1px solid #f0f3f8; font-size: 13px; }
+.literal-added { color: #0b8b3d; font-weight: 600; }
+.literal-removed { color: #c1272d; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -155,6 +201,28 @@ svg {
     <svg id="map" viewBox="0 0 1040 660" aria-label="Plano del aeropuerto"></svg>
   </div>
   <div id="panel">
+    <div class="file-loader" aria-label="Selector de soluciones">
+      <label>
+        Carpeta con soluciones
+        <input type="file" id="folderInput" webkitdirectory multiple>
+        <small>Se detectarán automáticamente los ficheros de plan (.sol, .soln)</small>
+      </label>
+      <label>
+        Problema PDDL
+        <input type="file" id="problemInput" accept=".pddl">
+      </label>
+      <label>
+        Plan individual
+        <input type="file" id="planInput" accept=".sol,.SOL,.soln,.plan,.txt">
+      </label>
+      <label>
+        Plan seleccionado
+        <select id="planSelect"></select>
+      </label>
+      <div>
+        <button id="useLoaded">Usar plan seleccionado</button>
+      </div>
+    </div>
     <div class="controls">
       <button id="back">⏮️ Atrás</button>
       <button id="play">▶️ Reproducir</button>
@@ -168,6 +236,12 @@ svg {
       <span class="badge suspicious">S</span><span>Equipaje sospechoso</span>
     </div>
     <div id="state-summary"></div>
+    <div class="literal-panel" aria-label="Literales tras la acción">
+      <h3>Literales verdaderos</h3>
+      <ul id="literalList" class="literal-list"></ul>
+      <h4>Cambios de esta acción</h4>
+      <ul id="literalChanges" class="literal-list"></ul>
+    </div>
     <div class="action-log" aria-label="Secuencia de acciones">
       <ul id="log"></ul>
     </div>
@@ -196,10 +270,16 @@ const edges = [
   ['facturacion','puerta3'],['recogida','puerta7']
 ];
 
-const payload = {"planFile": "plan_optic.sol", "problemFile": "problem.pddl", "objects": {"facturacion": "ubicacion", "recogida": "ubicacion", "inspeccion": "ubicacion", "puerta1": "ubicacion", "puerta2": "ubicacion", "puerta3": "ubicacion", "puerta4": "ubicacion", "puerta5": "ubicacion", "puerta6": "ubicacion", "puerta7": "ubicacion", "puerta8": "ubicacion", "m1": "maquina", "m2": "maquina", "v1": "vagon", "v2": "vagon", "v3": "vagon", "v4": "vagon", "v5": "vagon", "e1": "equipaje", "e2": "equipaje", "e3": "equipaje", "e4": "equipaje", "e5": "equipaje", "e6": "equipaje", "n0": "nivel", "n1": "nivel", "n2": "nivel"}, "initialState": {"facturacion": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "recogida": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "inspeccion": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta1": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta2": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta3": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta4": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta5": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta6": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta7": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta8": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "m1": {"type": "maquina", "location": "recogida", "container": null, "attachedTo": null, "status": "", "checked": false}, "m2": {"type": "maquina", "location": "recogida", "container": null, "attachedTo": null, "status": "", "checked": false}, "v1": {"type": "vagon", "location": "puerta1", "container": null, "attachedTo": null, "status": "", "checked": false}, "v2": {"type": "vagon", "location": "puerta1", "container": null, "attachedTo": null, "status": "", "checked": false}, "v3": {"type": "vagon", "location": "puerta1", "container": null, "attachedTo": null, "status": "", "checked": false}, "v4": {"type": "vagon", "location": "puerta5", "container": null, "attachedTo": null, "status": "", "checked": false}, "v5": {"type": "vagon", "location": "puerta5", "container": null, "attachedTo": null, "status": "", "checked": false}, "e1": {"type": "equipaje", "location": "facturacion", "container": null, "attachedTo": null, "status": "", "checked": false}, "e2": {"type": "equipaje", "location": "facturacion", "container": null, "attachedTo": null, "status": "", "checked": false}, "e3": {"type": "equipaje", "location": "puerta6", "container": null, "attachedTo": null, "status": "", "checked": false}, "e4": {"type": "equipaje", "location": "puerta6", "container": null, "attachedTo": null, "status": "", "checked": false}, "e5": {"type": "equipaje", "location": "puerta2", "container": null, "attachedTo": null, "status": "", "checked": false}, "e6": {"type": "equipaje", "location": "puerta2", "container": null, "attachedTo": null, "status": "", "checked": false}, "n0": {"type": "nivel", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "n1": {"type": "nivel", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "n2": {"type": "nivel", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}}, "actions": []};
+const payload = {"planFile": "plan_optic.sol", "problemFile": "problem.pddl", "planText": "Number of literals: 243\nConstructing lookup tables: [10%] [20%] [30%] [40%] [50%] [60%] [70%] [80%] [90%] [100%]\nPost filtering unreachable actions:  [10%] [20%] [30%] [40%] [50%] [60%] [70%] [80%] [90%] [100%]\n\u001b[01;34mNo analytic limits found, not considering limit effects of goal-only operators\u001b[00m\nAction 3462 - (inspeccionar-equipaje e3 inspeccion v1 m1) is uninteresting once we have fact (normal e3)\nAction 3463 - (inspeccionar-equipaje e6 inspeccion v1 m1) is uninteresting once we have fact (normal e6)\nAction 3464 - (inspeccionar-equipaje e3 inspeccion v2 m1) is uninteresting once we have fact (normal e3)\nAction 3465 - (inspeccionar-equipaje e6 inspeccion v2 m1) is uninteresting once we have fact (normal e6)\nAction 3466 - (inspeccionar-equipaje e3 inspeccion v3 m1) is uninteresting once we have fact (normal e3)\nAction 3467 - (inspeccionar-equipaje e6 inspeccion v3 m1) is uninteresting once we have fact (normal e6)\nAction 3468 - (inspeccionar-equipaje e3 inspeccion v4 m1) is uninteresting once we have fact (normal e3)\nAction 3469 - (inspeccionar-equipaje e6 inspeccion v4 m1) is uninteresting once we have fact (normal e6)\nAction 3470 - (inspeccionar-equipaje e3 inspeccion v5 m1) is uninteresting once we have fact (normal e3)\nAction 3471 - (inspeccionar-equipaje e6 inspeccion v5 m1) is uninteresting once we have fact (normal e6)\nAction 3472 - (inspeccionar-equipaje e3 inspeccion v1 m2) is uninteresting once we have fact (normal e3)\nAction 3473 - (inspeccionar-equipaje e6 inspeccion v1 m2) is uninteresting once we have fact (normal e6)\nAction 3474 - (inspeccionar-equipaje e3 inspeccion v2 m2) is uninteresting once we have fact (normal e3)\nAction 3475 - (inspeccionar-equipaje e6 inspeccion v2 m2) is uninteresting once we have fact (normal e6)\nAction 3476 - (inspeccionar-equipaje e3 inspeccion v3 m2) is uninteresting once we have fact (normal e3)\nAction 3477 - (inspeccionar-equipaje e6 inspeccion v3 m2) is uninteresting once we have fact (normal e6)\nAction 3478 - (inspeccionar-equipaje e3 inspeccion v4 m2) is uninteresting once we have fact (normal e3)\nAction 3479 - (inspeccionar-equipaje e6 inspeccion v4 m2) is uninteresting once we have fact (normal e6)\nAction 3480 - (inspeccionar-equipaje e3 inspeccion v5 m2) is uninteresting once we have fact (normal e3)\nAction 3481 - (inspeccionar-equipaje e6 inspeccion v5 m2) is uninteresting once we have fact (normal e6)\nInitial heuristic = 22.000, admissible cost estimate 0.000\nb (21.000 | 0.004)b (20.000 | 0.008)b (19.000 | 0.009)b (18.000 | 0.013)b (16.000 | 0.014)b (15.000 | 0.017)b (14.000 | 0.018)b (13.000 | 0.019)b (12.000 | 0.019)b (11.000 | 0.021)b (10.000 | 0.021)b (9.000 | 0.023)b (8.000 | 0.023)b (7.000 | 0.023)b (6.000 | 0.024)b (5.000 | 0.025)b (4.000 | 0.026)b (3.000 | 0.026)b (2.000 | 0.026)b (1.000 | 0.027)(G)\n; No metric specified - using makespan\n\n; Plan found with metric 0.028\n; States evaluated so far: 1180\n; States pruned based on pre-heuristic cost lower bound: 0\n; Time 1.04\n0.000: (mover-maquina m1 recogida facturacion)  [0.001]\n0.000: (mover-maquina m2 recogida inspeccion)  [0.001]\n0.001: (mover-maquina m1 facturacion puerta2)  [0.001]\n0.001: (mover-maquina m2 inspeccion puerta1)  [0.001]\n0.002: (enganchar-vagon v1 m2 puerta1 n0)  [0.001]\n0.002: (mover-maquina m1 puerta2 puerta4)  [0.001]\n0.003: (mover-maquina m2 puerta1 inspeccion)  [0.001]\n0.003: (mover-maquina m1 puerta4 puerta3)  [0.001]\n0.004: (desenganchar-vagon v1 m2 inspeccion n0)  [0.001]\n0.004: (mover-maquina m1 puerta3 puerta1)  [0.001]\n0.005: (mover-maquina m2 inspeccion puerta5)  [0.001]\n0.005: (enganchar-vagon v2 m1 puerta1 n0)  [0.001]\n0.006: (mover-maquina m1 puerta1 inspeccion)  [0.001]\n0.006: (mover-maquina m2 puerta5 puerta7)  [0.001]\n0.007: (mover-maquina m1 inspeccion facturacion)  [0.001]\n0.007: (mover-maquina m2 puerta7 puerta8)  [0.001]\n0.008: (cargar-equipaje e2 v2 m1 facturacion n0 n1)  [0.001]\n0.008: (mover-maquina m2 puerta8 puerta6)  [0.001]\n0.009: (cargar-equipaje e1 v2 m1 facturacion n1 n2)  [0.001]\n0.009: (mover-maquina m2 puerta6 recogida)  [0.001]\n0.010: (mover-maquina m1 facturacion puerta2)  [0.001]\n0.010: (mover-maquina m2 recogida inspeccion)  [0.001]\n0.011: (descargar-normal e2 v2 m1 puerta2 n2 n1)  [0.001]\n0.011: (enganchar-vagon v1 m2 inspeccion n0)  [0.001]\n0.012: (mover-maquina m1 puerta2 puerta4)  [0.001]\n0.012: (mover-maquina m2 inspeccion facturacion)  [0.001]\n0.013: (descargar-normal e1 v2 m1 puerta4 n1 n0)  [0.001]\n0.013: (mover-maquina m2 facturacion puerta2)  [0.001]\n0.014: (cargar-equipaje e6 v1 m2 puerta2 n0 n1)  [0.001]\n0.014: (mover-maquina m1 puerta4 puerta2)  [0.001]\n0.015: (cargar-equipaje e2 v1 m2 puerta2 n1 n2)  [0.001]\n0.015: (cargar-equipaje e5 v2 m1 puerta2 n0 n1)  [0.001]\n0.016: (mover-maquina m1 puerta2 facturacion)  [0.001]\n0.016: (mover-maquina m2 puerta2 facturacion)  [0.001]\n0.017: (mover-maquina m1 facturacion recogida)  [0.001]\n0.017: (mover-maquina m2 facturacion recogida)  [0.001]\n0.018: (descargar-normal e5 v2 m1 recogida n1 n0)  [0.001]\n0.018: (descargar-normal e2 v1 m2 recogida n2 n1)  [0.001]\n0.019: (mover-maquina m1 recogida inspeccion)  [0.001]\n0.019: (mover-maquina m2 recogida puerta6)  [0.001]\n0.020: (mover-maquina m1 inspeccion recogida)  [0.001]\n0.020: (cargar-equipaje e3 v1 m2 puerta6 n1 n2)  [0.001]\n0.021: (mover-maquina m2 puerta6 recogida)  [0.001]\n0.021: (cargar-equipaje e2 v2 m1 recogida n0 n1)  [0.001]\n0.022: (mover-maquina m1 recogida puerta6)  [0.001]\n0.022: (mover-maquina m2 recogida inspeccion)  [0.001]\n0.023: (cargar-equipaje e4 v2 m1 puerta6 n1 n2)  [0.001]\n0.023: (inspeccionar-equipaje e6 inspeccion v1 m2)  [0.001]\n0.023: (inspeccionar-equipaje e3 inspeccion v1 m2)  [0.001]\n0.024: (mover-maquina m2 inspeccion recogida)  [0.001]\n0.024: (mover-maquina m1 puerta6 puerta8)  [0.001]\n0.025: (descargar-normal e6 v1 m2 recogida n2 n1)  [0.001]\n0.025: (descargar-normal e2 v2 m1 puerta8 n2 n1)  [0.001]\n0.026: (mover-maquina m1 puerta8 puerta6)  [0.001]\n0.026: (descargar-normal e3 v1 m2 recogida n1 n0)  [0.001]\n0.027: (mover-maquina m1 puerta6 recogida)  [0.001]\n0.028: (descargar-normal e4 v2 m1 recogida n1 n0)  [0.001]\n\n * All goal deadlines now no later than 0.028\n\nResorting to best-first search\nRunning WA* with W = 5.000, not restarting with goal states\nb (21.000 | 0.004)b (20.000 | 0.007)b (19.000 | 0.008)b (17.000 | 0.011)b (16.000 | 0.012)b (15.000 | 0.014)b (14.000 | 0.015)b (13.000 | 0.016)b (12.000 | 0.019)b (11.000 | 0.020)b (10.000 | 0.023)b (9.000 | 0.026)b (8.000 | 0.027)b (7.000 | 0.028)b (7.000 | 0.027)b (6.000 | 0.027)b (5.000 | 0.027)b (5.000 | 0.026)b (4.000 | 0.027)b (3.000 | 0.028)b (3.000 | 0.027)b (2.000 | 0.027)b (1.000 | 0.027)(G)b (0.000 | 0.028)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)(G)", "problemText": "(define (problem aeropuerto-p1)\n  (:domain aeropuerto)\n\n  (:objects\n    ; ubicaciones\n    facturacion recogida inspeccion\n    puerta1 puerta2 puerta3 puerta4\n    puerta5 puerta6 puerta7 puerta8 - ubicacion\n\n    ; maquinas\n    m1 m2 - maquina\n\n    ; vagones\n    v1 v2 v3 v4 v5 - vagon\n\n    ; equipajes\n    e1 e2 e3 e4 e5 e6 - equipaje\n\n    ; niveles de carga\n    n0 n1 n2 - nivel   \n  )\n\n  (:init\n    ; ---------- Estructura de la terminal ----------\n    ; zona com\u00fan\n    (siguiente facturacion recogida)\n    (siguiente recogida facturacion)\n\n    (siguiente facturacion inspeccion)\n    (siguiente inspeccion facturacion)\n\n    (siguiente recogida inspeccion)\n    (siguiente inspeccion recogida)\n\n    ; conexiones con puertas\n    (siguiente facturacion puerta2)\n    (siguiente puerta2 facturacion)\n\n    (siguiente recogida puerta6)\n    (siguiente puerta6 recogida)\n\n    (siguiente inspeccion puerta1)\n    (siguiente puerta1 inspeccion)\n\n    (siguiente inspeccion puerta5)\n    (siguiente puerta5 inspeccion)\n\n    ; pasillo izquierdo: puertas contiguas 2\u20134\u20133\u20131\n    (siguiente puerta2 puerta4)\n    (siguiente puerta4 puerta2)\n\n    (siguiente puerta4 puerta3)\n    (siguiente puerta3 puerta4)\n\n    (siguiente puerta3 puerta1)\n    (siguiente puerta1 puerta3)\n\n    ; pasillo derecho: puertas contiguas 6\u20138\u20137\u20135\n    (siguiente puerta6 puerta8)\n    (siguiente puerta8 puerta6)\n\n    (siguiente puerta8 puerta7)\n    (siguiente puerta7 puerta8)\n\n    (siguiente puerta7 puerta5)\n    (siguiente puerta5 puerta7)\n\n    ; Oficina de inspecci\u00f3n\n    (es-oficina-inspeccion inspeccion)\n\n\n    ; Niveles\n    (siguiente-nivel n0 n1)\n    (siguiente-nivel n1 n2)\n    (nivel-cero n0)\n\n    ; ---------- Veh\u00edculos ----------\n    ; tres vagones sueltos en puerta1\n    (esta-en v1 puerta1)\n    (esta-en v2 puerta1)\n    (esta-en v3 puerta1)\n\n    ; dos vagones sueltos en puerta5\n    (esta-en v4 puerta5)\n    (esta-en v5 puerta5)\n\n    ; todos los vagones empiezan libres y vac\u00edos (n0)\n    (vagon-suelto v1)\n    (vagon-suelto v2)\n    (vagon-suelto v3)\n    (vagon-suelto v4)\n    (vagon-suelto v5)\n\n    (en-nivel v1 n0)\n    (en-nivel v2 n0)\n    (en-nivel v3 n0)\n    (en-nivel v4 n0)\n    (en-nivel v5 n0)\n\n\n    (libre m1)\n    (libre m2)\n\n    ; dos m\u00e1quinas en la zona de recogida\n    (esta-en m1 recogida)\n    (esta-en m2 recogida)\n\n    ; ---------- Equipajes ----------\n    ; 1) no sospechoso facturado \u2192 puerta4\n    (esta-en e1 facturacion)\n    (normal e1)\n\n    ; 2) no sospechoso facturado \u2192 puerta8\n    (esta-en e2 facturacion)\n    (normal e2)\n\n    ; 3) sospechoso llega a puerta6 \u2192 recogida (pasando por inspecci\u00f3n)\n    (esta-en e3 puerta6)\n    (sospechoso e3)\n\n    ; 4) no sospechoso llega a puerta6 \u2192 recogida\n    (esta-en e4 puerta6)\n    (normal e4)\n\n    ; 5) no sospechoso llega a puerta2 \u2192 recogida\n    (esta-en e5 puerta2)\n    (normal e5)\n\n    ; 6) sospechoso llega a puerta2 \u2192 recogida (pasando por inspecci\u00f3n)\n    (esta-en e6 puerta2)\n    (sospechoso e6)\n    )\n\n  (:goal\n    (and\n      ; destinos finales\n      (esta-en e1 puerta4)\n      (esta-en e2 puerta8)\n      (esta-en e3 recogida)\n      (esta-en e4 recogida)\n      (esta-en e5 recogida)\n      (esta-en e6 recogida)\n    )\n  )\n)\n\n", "objects": {"facturacion": "ubicacion", "recogida": "ubicacion", "inspeccion": "ubicacion", "puerta1": "ubicacion", "puerta2": "ubicacion", "puerta3": "ubicacion", "puerta4": "ubicacion", "puerta5": "ubicacion", "puerta6": "ubicacion", "puerta7": "ubicacion", "puerta8": "ubicacion", "m1": "maquina", "m2": "maquina", "v1": "vagon", "v2": "vagon", "v3": "vagon", "v4": "vagon", "v5": "vagon", "e1": "equipaje", "e2": "equipaje", "e3": "equipaje", "e4": "equipaje", "e5": "equipaje", "e6": "equipaje", "n0": "nivel", "n1": "nivel", "n2": "nivel"}, "initialState": {"facturacion": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "recogida": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "inspeccion": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta1": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta2": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta3": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta4": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta5": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta6": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta7": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "puerta8": {"type": "ubicacion", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "m1": {"type": "maquina", "location": "recogida", "container": null, "attachedTo": null, "status": "", "checked": false}, "m2": {"type": "maquina", "location": "recogida", "container": null, "attachedTo": null, "status": "", "checked": false}, "v1": {"type": "vagon", "location": "puerta1", "container": null, "attachedTo": null, "status": "", "checked": false}, "v2": {"type": "vagon", "location": "puerta1", "container": null, "attachedTo": null, "status": "", "checked": false}, "v3": {"type": "vagon", "location": "puerta1", "container": null, "attachedTo": null, "status": "", "checked": false}, "v4": {"type": "vagon", "location": "puerta5", "container": null, "attachedTo": null, "status": "", "checked": false}, "v5": {"type": "vagon", "location": "puerta5", "container": null, "attachedTo": null, "status": "", "checked": false}, "e1": {"type": "equipaje", "location": "facturacion", "container": null, "attachedTo": null, "status": "", "checked": false}, "e2": {"type": "equipaje", "location": "facturacion", "container": null, "attachedTo": null, "status": "", "checked": false}, "e3": {"type": "equipaje", "location": "puerta6", "container": null, "attachedTo": null, "status": "", "checked": false}, "e4": {"type": "equipaje", "location": "puerta6", "container": null, "attachedTo": null, "status": "", "checked": false}, "e5": {"type": "equipaje", "location": "puerta2", "container": null, "attachedTo": null, "status": "", "checked": false}, "e6": {"type": "equipaje", "location": "puerta2", "container": null, "attachedTo": null, "status": "", "checked": false}, "n0": {"type": "nivel", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "n1": {"type": "nivel", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}, "n2": {"type": "nivel", "location": null, "container": null, "attachedTo": null, "status": "", "checked": false}}, "actions": [{"index": 0, "time": 0.0, "name": "mover-maquina", "args": ["m1", "recogida", "facturacion"], "raw": "mover-maquina m1 recogida facturacion"}, {"index": 1, "time": 0.0, "name": "mover-maquina", "args": ["m2", "recogida", "inspeccion"], "raw": "mover-maquina m2 recogida inspeccion"}, {"index": 2, "time": 0.001, "name": "mover-maquina", "args": ["m1", "facturacion", "puerta2"], "raw": "mover-maquina m1 facturacion puerta2"}, {"index": 3, "time": 0.001, "name": "mover-maquina", "args": ["m2", "inspeccion", "puerta1"], "raw": "mover-maquina m2 inspeccion puerta1"}, {"index": 4, "time": 0.002, "name": "enganchar-vagon", "args": ["v1", "m2", "puerta1", "n0"], "raw": "enganchar-vagon v1 m2 puerta1 n0"}, {"index": 5, "time": 0.002, "name": "mover-maquina", "args": ["m1", "puerta2", "puerta4"], "raw": "mover-maquina m1 puerta2 puerta4"}, {"index": 6, "time": 0.003, "name": "mover-maquina", "args": ["m2", "puerta1", "inspeccion"], "raw": "mover-maquina m2 puerta1 inspeccion"}, {"index": 7, "time": 0.003, "name": "mover-maquina", "args": ["m1", "puerta4", "puerta3"], "raw": "mover-maquina m1 puerta4 puerta3"}, {"index": 8, "time": 0.004, "name": "desenganchar-vagon", "args": ["v1", "m2", "inspeccion", "n0"], "raw": "desenganchar-vagon v1 m2 inspeccion n0"}, {"index": 9, "time": 0.004, "name": "mover-maquina", "args": ["m1", "puerta3", "puerta1"], "raw": "mover-maquina m1 puerta3 puerta1"}, {"index": 10, "time": 0.005, "name": "mover-maquina", "args": ["m2", "inspeccion", "puerta5"], "raw": "mover-maquina m2 inspeccion puerta5"}, {"index": 11, "time": 0.005, "name": "enganchar-vagon", "args": ["v2", "m1", "puerta1", "n0"], "raw": "enganchar-vagon v2 m1 puerta1 n0"}, {"index": 12, "time": 0.006, "name": "mover-maquina", "args": ["m1", "puerta1", "inspeccion"], "raw": "mover-maquina m1 puerta1 inspeccion"}, {"index": 13, "time": 0.006, "name": "mover-maquina", "args": ["m2", "puerta5", "puerta7"], "raw": "mover-maquina m2 puerta5 puerta7"}, {"index": 14, "time": 0.007, "name": "mover-maquina", "args": ["m1", "inspeccion", "facturacion"], "raw": "mover-maquina m1 inspeccion facturacion"}, {"index": 15, "time": 0.007, "name": "mover-maquina", "args": ["m2", "puerta7", "puerta8"], "raw": "mover-maquina m2 puerta7 puerta8"}, {"index": 16, "time": 0.008, "name": "cargar-equipaje", "args": ["e2", "v2", "m1", "facturacion", "n0", "n1"], "raw": "cargar-equipaje e2 v2 m1 facturacion n0 n1"}, {"index": 17, "time": 0.008, "name": "mover-maquina", "args": ["m2", "puerta8", "puerta6"], "raw": "mover-maquina m2 puerta8 puerta6"}, {"index": 18, "time": 0.009, "name": "cargar-equipaje", "args": ["e1", "v2", "m1", "facturacion", "n1", "n2"], "raw": "cargar-equipaje e1 v2 m1 facturacion n1 n2"}, {"index": 19, "time": 0.009, "name": "mover-maquina", "args": ["m2", "puerta6", "recogida"], "raw": "mover-maquina m2 puerta6 recogida"}, {"index": 20, "time": 0.01, "name": "mover-maquina", "args": ["m1", "facturacion", "puerta2"], "raw": "mover-maquina m1 facturacion puerta2"}, {"index": 21, "time": 0.01, "name": "mover-maquina", "args": ["m2", "recogida", "inspeccion"], "raw": "mover-maquina m2 recogida inspeccion"}, {"index": 22, "time": 0.011, "name": "descargar-normal", "args": ["e2", "v2", "m1", "puerta2", "n2", "n1"], "raw": "descargar-normal e2 v2 m1 puerta2 n2 n1"}, {"index": 23, "time": 0.011, "name": "enganchar-vagon", "args": ["v1", "m2", "inspeccion", "n0"], "raw": "enganchar-vagon v1 m2 inspeccion n0"}, {"index": 24, "time": 0.012, "name": "mover-maquina", "args": ["m1", "puerta2", "puerta4"], "raw": "mover-maquina m1 puerta2 puerta4"}, {"index": 25, "time": 0.012, "name": "mover-maquina", "args": ["m2", "inspeccion", "facturacion"], "raw": "mover-maquina m2 inspeccion facturacion"}, {"index": 26, "time": 0.013, "name": "descargar-normal", "args": ["e1", "v2", "m1", "puerta4", "n1", "n0"], "raw": "descargar-normal e1 v2 m1 puerta4 n1 n0"}, {"index": 27, "time": 0.013, "name": "mover-maquina", "args": ["m2", "facturacion", "puerta2"], "raw": "mover-maquina m2 facturacion puerta2"}, {"index": 28, "time": 0.014, "name": "cargar-equipaje", "args": ["e6", "v1", "m2", "puerta2", "n0", "n1"], "raw": "cargar-equipaje e6 v1 m2 puerta2 n0 n1"}, {"index": 29, "time": 0.014, "name": "mover-maquina", "args": ["m1", "puerta4", "puerta2"], "raw": "mover-maquina m1 puerta4 puerta2"}, {"index": 30, "time": 0.015, "name": "cargar-equipaje", "args": ["e2", "v1", "m2", "puerta2", "n1", "n2"], "raw": "cargar-equipaje e2 v1 m2 puerta2 n1 n2"}, {"index": 31, "time": 0.015, "name": "cargar-equipaje", "args": ["e5", "v2", "m1", "puerta2", "n0", "n1"], "raw": "cargar-equipaje e5 v2 m1 puerta2 n0 n1"}, {"index": 32, "time": 0.016, "name": "mover-maquina", "args": ["m1", "puerta2", "facturacion"], "raw": "mover-maquina m1 puerta2 facturacion"}, {"index": 33, "time": 0.016, "name": "mover-maquina", "args": ["m2", "puerta2", "facturacion"], "raw": "mover-maquina m2 puerta2 facturacion"}, {"index": 34, "time": 0.017, "name": "mover-maquina", "args": ["m1", "facturacion", "recogida"], "raw": "mover-maquina m1 facturacion recogida"}, {"index": 35, "time": 0.017, "name": "mover-maquina", "args": ["m2", "facturacion", "recogida"], "raw": "mover-maquina m2 facturacion recogida"}, {"index": 36, "time": 0.018, "name": "descargar-normal", "args": ["e5", "v2", "m1", "recogida", "n1", "n0"], "raw": "descargar-normal e5 v2 m1 recogida n1 n0"}, {"index": 37, "time": 0.018, "name": "descargar-normal", "args": ["e2", "v1", "m2", "recogida", "n2", "n1"], "raw": "descargar-normal e2 v1 m2 recogida n2 n1"}, {"index": 38, "time": 0.019, "name": "mover-maquina", "args": ["m1", "recogida", "inspeccion"], "raw": "mover-maquina m1 recogida inspeccion"}, {"index": 39, "time": 0.019, "name": "mover-maquina", "args": ["m2", "recogida", "puerta6"], "raw": "mover-maquina m2 recogida puerta6"}, {"index": 40, "time": 0.02, "name": "mover-maquina", "args": ["m1", "inspeccion", "recogida"], "raw": "mover-maquina m1 inspeccion recogida"}, {"index": 41, "time": 0.02, "name": "cargar-equipaje", "args": ["e3", "v1", "m2", "puerta6", "n1", "n2"], "raw": "cargar-equipaje e3 v1 m2 puerta6 n1 n2"}, {"index": 42, "time": 0.021, "name": "mover-maquina", "args": ["m2", "puerta6", "recogida"], "raw": "mover-maquina m2 puerta6 recogida"}, {"index": 43, "time": 0.021, "name": "cargar-equipaje", "args": ["e2", "v2", "m1", "recogida", "n0", "n1"], "raw": "cargar-equipaje e2 v2 m1 recogida n0 n1"}, {"index": 44, "time": 0.022, "name": "mover-maquina", "args": ["m1", "recogida", "puerta6"], "raw": "mover-maquina m1 recogida puerta6"}, {"index": 45, "time": 0.022, "name": "mover-maquina", "args": ["m2", "recogida", "inspeccion"], "raw": "mover-maquina m2 recogida inspeccion"}, {"index": 46, "time": 0.023, "name": "cargar-equipaje", "args": ["e4", "v2", "m1", "puerta6", "n1", "n2"], "raw": "cargar-equipaje e4 v2 m1 puerta6 n1 n2"}, {"index": 47, "time": 0.023, "name": "inspeccionar-equipaje", "args": ["e6", "inspeccion", "v1", "m2"], "raw": "inspeccionar-equipaje e6 inspeccion v1 m2"}, {"index": 48, "time": 0.023, "name": "inspeccionar-equipaje", "args": ["e3", "inspeccion", "v1", "m2"], "raw": "inspeccionar-equipaje e3 inspeccion v1 m2"}, {"index": 49, "time": 0.024, "name": "mover-maquina", "args": ["m2", "inspeccion", "recogida"], "raw": "mover-maquina m2 inspeccion recogida"}, {"index": 50, "time": 0.024, "name": "mover-maquina", "args": ["m1", "puerta6", "puerta8"], "raw": "mover-maquina m1 puerta6 puerta8"}, {"index": 51, "time": 0.025, "name": "descargar-normal", "args": ["e6", "v1", "m2", "recogida", "n2", "n1"], "raw": "descargar-normal e6 v1 m2 recogida n2 n1"}, {"index": 52, "time": 0.025, "name": "descargar-normal", "args": ["e2", "v2", "m1", "puerta8", "n2", "n1"], "raw": "descargar-normal e2 v2 m1 puerta8 n2 n1"}, {"index": 53, "time": 0.026, "name": "mover-maquina", "args": ["m1", "puerta8", "puerta6"], "raw": "mover-maquina m1 puerta8 puerta6"}, {"index": 54, "time": 0.026, "name": "descargar-normal", "args": ["e3", "v1", "m2", "recogida", "n1", "n0"], "raw": "descargar-normal e3 v1 m2 recogida n1 n0"}, {"index": 55, "time": 0.027, "name": "mover-maquina", "args": ["m1", "puerta6", "recogida"], "raw": "mover-maquina m1 puerta6 recogida"}, {"index": 56, "time": 0.028, "name": "descargar-normal", "args": ["e4", "v2", "m1", "recogida", "n1", "n0"], "raw": "descargar-normal e4 v2 m1 recogida n1 n0"}]};
 
 let actions = payload.actions;
 let baseState = normalizeState(payload.initialState);
+let currentPlanName = payload.planFile;
+let currentProblemName = payload.problemFile;
+let currentStep = -1;
+let problemText = payload.problemText || '';
+let planText = payload.planText || '';
+const loadedPlans = new Map();
 
 function normalizeState(state){
   const st = cloneState(state);
@@ -233,6 +313,18 @@ function computeState(upTo){
     applyAction(st, actions[i]);
   }
   return st;
+}
+
+function stateToLiterals(state){
+  const literals = [];
+  Object.entries(state).forEach(([name, obj])=>{
+    if(obj.location){ literals.push(`esta-en ${name} ${obj.location}`); }
+    if(obj.attachedTo){ literals.push(`enganchado ${name} ${obj.attachedTo}`); }
+    if(obj.container){ literals.push(`en-contenedor ${name} ${obj.container}`); }
+    if(obj.status){ literals.push(`${obj.status} ${name}`); }
+    if(obj.checked){ literals.push(`inspeccionado ${name}`); }
+  });
+  return literals.sort();
 }
 
 function applyAction(st, action){
@@ -522,6 +614,47 @@ function renderSummary(state){
   });
 }
 
+function renderLiterals(state, previousState){
+  const list = document.getElementById('literalList');
+  const changes = document.getElementById('literalChanges');
+  list.innerHTML = '';
+  changes.innerHTML = '';
+  const current = stateToLiterals(state);
+  const prev = previousState ? new Set(stateToLiterals(previousState)) : new Set();
+  const currentSet = new Set(current);
+  const added = current.filter(lit => !prev.has(lit));
+  const removed = [...prev].filter(lit => !currentSet.has(lit));
+
+  current.forEach(lit=>{
+    const li = document.createElement('li');
+    if(prev.size === 0 || added.includes(lit)){
+      li.className = 'literal-added';
+    }
+    li.textContent = lit;
+    list.appendChild(li);
+  });
+
+  if(added.length === 0 && removed.length === 0){
+    const li = document.createElement('li');
+    li.textContent = 'Sin cambios en esta acción';
+    changes.appendChild(li);
+    return;
+  }
+
+  added.forEach(lit=>{
+    const li = document.createElement('li');
+    li.className = 'literal-added';
+    li.textContent = `+ ${lit}`;
+    changes.appendChild(li);
+  });
+  removed.forEach(lit=>{
+    const li = document.createElement('li');
+    li.className = 'literal-removed';
+    li.textContent = `- ${lit}`;
+    changes.appendChild(li);
+  });
+}
+
 function populateLog(log){
   const initial = document.createElement('li');
   initial.id = 'action--1';
@@ -539,8 +672,10 @@ function update(step){
   const svg = document.getElementById('map');
   drawMap(svg);
   const state = computeState(step);
+  const previous = step <= -1 ? null : computeState(step-1);
   renderTokens(svg, state);
   renderSummary(state);
+  renderLiterals(state, previous);
   document.getElementById('status').textContent = step < 0 ? 'Estado inicial' : `Acción ${step + 1} / ${actions.length}`;
   document.querySelectorAll('.action-log li').forEach(li=>li.classList.remove('active'));
   const active = document.getElementById(`action-${step}`);
@@ -552,20 +687,31 @@ function update(step){
 function init(){
   const log = document.getElementById('log');
   populateLog(log);
-  let step = -1;
+  currentStep = -1;
   let timer = null;
-  update(step);
+  update(currentStep);
   const back = document.getElementById('back');
   const next = document.getElementById('next');
   const play = document.getElementById('play');
+  const planSelect = document.getElementById('planSelect');
+  const folderInput = document.getElementById('folderInput');
+  const planInput = document.getElementById('planInput');
+  const problemInput = document.getElementById('problemInput');
+  const useLoaded = document.getElementById('useLoaded');
+
+  planSelect.innerHTML = '';
+  const baseOpt = document.createElement('option');
+  baseOpt.value = '__initial__';
+  baseOpt.textContent = currentPlanName || 'Plan inicial';
+  planSelect.appendChild(baseOpt);
 
   back.addEventListener('click', ()=>{
-    step = Math.max(-1, step-1);
-    update(step);
+    currentStep = Math.max(-1, currentStep-1);
+    update(currentStep);
   });
   next.addEventListener('click', ()=>{
-    step = Math.min(actions.length-1, step+1);
-    update(step);
+    currentStep = Math.min(actions.length-1, currentStep+1);
+    update(currentStep);
   });
   play.addEventListener('click', ()=>{
     if(timer){
@@ -574,13 +720,167 @@ function init(){
     }
     play.textContent = '⏸️ Pausar';
     timer = setInterval(()=>{
-      if(step >= actions.length -1){
+      if(currentStep >= actions.length -1){
         clearInterval(timer); timer=null; play.textContent='▶️ Reproducir'; return;
       }
-      step +=1;
-      update(step);
+      currentStep +=1;
+      update(currentStep);
     }, 900);
   });
+
+  folderInput.addEventListener('change', async (ev)=>{
+    await cacheFiles(ev.target.files);
+    refreshPlanSelect(planSelect);
+  });
+  planInput.addEventListener('change', async (ev)=>{
+    await cacheFiles(ev.target.files);
+    refreshPlanSelect(planSelect);
+  });
+  problemInput.addEventListener('change', async (ev)=>{
+    const files = ev.target.files;
+    if(files && files[0]){
+      problemText = await files[0].text();
+      currentProblemName = files[0].name;
+    }
+  });
+  useLoaded.addEventListener('click', async ()=>{
+    const selectedKey = planSelect.value;
+    if(selectedKey === '__initial__'){
+      applyPayload(payload);
+      return;
+    }
+    const record = loadedPlans.get(selectedKey);
+    if(!record){ return; }
+    if(!problemText){
+      alert('Carga antes un fichero de problema .pddl para poder interpretar el plan.');
+      return;
+    }
+    const newPayload = buildPayloadFromTexts(record.text, problemText, record.name, currentProblemName || 'problema.pddl');
+    applyPayload(newPayload);
+  });
+}
+
+function applyPayload(pl){
+  actions = pl.actions;
+  baseState = normalizeState(pl.initialState);
+  currentPlanName = pl.planFile;
+  currentProblemName = pl.problemFile;
+  planText = pl.planText || planText;
+  problemText = pl.problemText || problemText;
+  document.querySelector('header p').textContent = `Plan: ${currentPlanName} | Problema: ${currentProblemName}`;
+  document.getElementById('log').innerHTML = '';
+  populateLog(document.getElementById('log'));
+  currentStep = -1;
+  update(currentStep);
+}
+
+async function cacheFiles(fileList){
+  for(const file of fileList){
+    const text = await file.text();
+    const key = file.webkitRelativePath || file.name;
+    loadedPlans.set(key, {name: file.name, text});
+    if(!problemText && file.name.toLowerCase().endsWith('.pddl')){
+      problemText = text;
+      currentProblemName = file.name;
+    }
+  }
+}
+
+function refreshPlanSelect(select){
+  const previous = select.value;
+  select.innerHTML = '';
+  const baseOpt = document.createElement('option');
+  baseOpt.value = '__initial__';
+  baseOpt.textContent = currentPlanName || 'Plan inicial';
+  select.appendChild(baseOpt);
+  [...loadedPlans.entries()]
+    .filter(([key, rec])=> rec.name.match(/\.soln?$|\.plan$|\.txt$/i))
+    .forEach(([key, rec])=>{
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = rec.name;
+      select.appendChild(opt);
+    });
+  if([...select.options].some(opt=>opt.value === previous)){
+    select.value = previous;
+  }
+}
+
+function buildPayloadFromTexts(planTxt, problemTxt, planName, problemName){
+  const objects = parseObjectsJS(problemTxt);
+  const initialState = parseInitialStateJS(problemTxt, objects);
+  const acts = parsePlanJS(planTxt);
+  return {
+    planFile: planName,
+    problemFile: problemName,
+    planText: planTxt,
+    problemText: problemTxt,
+    objects,
+    initialState,
+    actions: acts,
+  };
+}
+
+function parseObjectsJS(problemText){
+  const objects = {};
+  const match = problemText.match(/\(:objects([\s\S]*?)\)/i);
+  if(!match){ return objects; }
+  const block = match[1];
+  const tokens = block
+    .split(/\s+/)
+    .map(t=>t.trim())
+    .filter(Boolean);
+  let buffer = [];
+  let currentType = null;
+  for(let idx=0; idx<tokens.length; idx++){
+    const tok = tokens[idx];
+    if(tok === '-'){
+      currentType = tokens[idx+1];
+      buffer.forEach(name=> objects[name] = currentType || 'object');
+      buffer = [];
+      idx +=1;
+    } else {
+      buffer.push(tok);
+    }
+  }
+  buffer.forEach(name=> objects[name] = currentType || 'object');
+  return objects;
+}
+
+function parseInitialStateJS(problemText, objects){
+  const initialState = {};
+  Object.entries(objects).forEach(([name, type])=>{
+    initialState[name] = {type, location: null, container: null, attachedTo: null, status: '', checked: false};
+  });
+  const initMatch = problemText.match(/\(:init([\s\S]*?)\)\s*\(:goal/i);
+  if(!initMatch){ return initialState; }
+  const block = initMatch[1];
+  block.split(/\n/).forEach(line=>{
+    const clean = line.split(';')[0].trim();
+    if(!clean){ return; }
+    const fact = clean.replace(/[()]/g,'').trim().split(/\s+/);
+    if(fact.length < 2){ return; }
+    const [pred, subj, target] = fact;
+    const entry = initialState[subj];
+    if(!entry){ return; }
+    if(pred === 'esta-en' && target){ entry.location = target; }
+    else if(pred === 'enganchado' && target){ entry.attachedTo = target; }
+    else if(pred === 'sospechoso'){ entry.status = 'sospechoso'; }
+    else if(pred === 'normal'){ entry.status = 'normal'; }
+  });
+  return initialState;
+}
+
+function parsePlanJS(planText){
+  const actions = [];
+  const regex = /\s*([\d\.]+):\s*\(([^\)]+)\)/g;
+  let match;
+  while((match = regex.exec(planText)) !== null){
+    const raw = match[2].trim();
+    const parts = raw.toLowerCase().split(/\s+/);
+    actions.push({index: actions.length, time: parseFloat(match[1]), name: parts[0], args: parts.slice(1), raw});
+  }
+  return actions;
 }
 
 document.addEventListener('DOMContentLoaded', init);

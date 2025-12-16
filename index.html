@@ -423,48 +423,60 @@ function applyAction(st, action){
   }
 }
 
-function drawMap(svg){
-  svg.innerHTML = '';
-  edges.forEach(([a,b])=>{
-    const na = nodes[a];
-    const nb = nodes[b];
-    const road = document.createElementNS('http://www.w3.org/2000/svg','line');
-    road.setAttribute('x1', na.x);
-    road.setAttribute('y1', na.y);
-    road.setAttribute('x2', nb.x);
-    road.setAttribute('y2', nb.y);
-    road.setAttribute('class','road');
-    svg.appendChild(road);
+  function drawMap(svg){
+    svg.innerHTML = '';
+    svg.setAttribute('style','background:#fdfefe;border:1px solid #d6d9e1;border-radius:12px;');
+    edges.forEach(([a,b])=>{
+      const na = nodes[a];
+      const nb = nodes[b];
+      const road = document.createElementNS('http://www.w3.org/2000/svg','line');
+      road.setAttribute('x1', na.x);
+      road.setAttribute('y1', na.y);
+      road.setAttribute('x2', nb.x);
+      road.setAttribute('y2', nb.y);
+      road.setAttribute('stroke', '#9aaac7');
+      road.setAttribute('stroke-width', '10');
+      road.setAttribute('stroke-linecap', 'round');
+      road.setAttribute('opacity', '0.9');
+      svg.appendChild(road);
 
-    const dash = document.createElementNS('http://www.w3.org/2000/svg','line');
-    dash.setAttribute('x1', na.x);
-    dash.setAttribute('y1', na.y);
-    dash.setAttribute('x2', nb.x);
-    dash.setAttribute('y2', nb.y);
-    dash.setAttribute('class','road-dash');
-    svg.appendChild(dash);
-  });
-  Object.entries(nodes).forEach(([name,info])=>{
-    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    rect.setAttribute('x', info.x - 60);
-    rect.setAttribute('y', info.y - 30);
-    rect.setAttribute('width', 120);
-    rect.setAttribute('height', 60);
-    rect.setAttribute('rx', 8);
-    rect.setAttribute('class','node');
-    svg.appendChild(rect);
+      const dash = document.createElementNS('http://www.w3.org/2000/svg','line');
+      dash.setAttribute('x1', na.x);
+      dash.setAttribute('y1', na.y);
+      dash.setAttribute('x2', nb.x);
+      dash.setAttribute('y2', nb.y);
+      dash.setAttribute('stroke', '#fdfefe');
+      dash.setAttribute('stroke-width', '3');
+      dash.setAttribute('stroke-linecap', 'round');
+      dash.setAttribute('stroke-dasharray', '14 10');
+      dash.setAttribute('opacity', '0.9');
+      svg.appendChild(dash);
+    });
+    Object.entries(nodes).forEach(([name,info])=>{
+      const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('x', info.x - 60);
+      rect.setAttribute('y', info.y - 30);
+      rect.setAttribute('width', 120);
+      rect.setAttribute('height', 60);
+      rect.setAttribute('rx', 8);
+      rect.setAttribute('fill', '#e8edf6');
+      rect.setAttribute('stroke', '#243c64');
+      rect.setAttribute('stroke-width', '2');
+      svg.appendChild(rect);
 
-    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
-    label.setAttribute('x', info.x);
-    label.setAttribute('y', info.y);
-    label.setAttribute('text-anchor', 'middle');
-    label.setAttribute('class','node-label');
-    label.textContent = info.label;
-    svg.appendChild(label);
-  });
-}
+      const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+      label.setAttribute('x', info.x);
+      label.setAttribute('y', info.y);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('fill', '#1b2738');
+      label.setAttribute('font-size', '12px');
+      label.setAttribute('font-weight', '600');
+      label.textContent = info.label;
+      svg.appendChild(label);
+    });
+  }
 
-function renderTokens(svg, state){
+  function renderTokens(svg, state){
   const perLocation = {};
   Object.entries(state).forEach(([name,obj])=>{
     const loc = locationFor(name, state);
@@ -483,87 +495,112 @@ function renderTokens(svg, state){
     return baseX + (idx - (total-1)/2) * spacing;
   }
 
-  function drawMachine(x,y,label){
-    const group = document.createElementNS('http://www.w3.org/2000/svg','g');
-    const body = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    body.setAttribute('x', x-28); body.setAttribute('y', y-22);
-    body.setAttribute('width', 56); body.setAttribute('height', 28);
-    body.setAttribute('rx', 8); body.setAttribute('class','machine-body');
-    group.appendChild(body);
-    const cabin = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    cabin.setAttribute('x', x-12); cabin.setAttribute('y', y-32);
-    cabin.setAttribute('width', 22); cabin.setAttribute('height', 12);
-    cabin.setAttribute('rx', 4); cabin.setAttribute('class','machine-cabin');
-    group.appendChild(cabin);
-    [ -16, 16].forEach(offset=>{
-      const wheel = document.createElementNS('http://www.w3.org/2000/svg','circle');
-      wheel.setAttribute('cx', x+offset);
-      wheel.setAttribute('cy', y+6);
-      wheel.setAttribute('r', 5);
-      wheel.setAttribute('class','wheel');
-      group.appendChild(wheel);
-    });
-    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
-    text.setAttribute('x', x);
-    text.setAttribute('y', y-24);
-    text.setAttribute('text-anchor','middle');
-    text.setAttribute('class','entity-label');
-    text.textContent = label.toUpperCase();
-    group.appendChild(text);
-    svg.appendChild(group);
-  }
+    function drawMachine(x,y,label){
+      const group = document.createElementNS('http://www.w3.org/2000/svg','g');
+      const body = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      body.setAttribute('x', x-28); body.setAttribute('y', y-22);
+      body.setAttribute('width', 56); body.setAttribute('height', 28);
+      body.setAttribute('rx', 8);
+      body.setAttribute('fill', '#f6c344');
+      body.setAttribute('stroke', '#243c64');
+      body.setAttribute('stroke-width', '1.8');
+      group.appendChild(body);
+      const cabin = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      cabin.setAttribute('x', x-12); cabin.setAttribute('y', y-32);
+      cabin.setAttribute('width', 22); cabin.setAttribute('height', 12);
+      cabin.setAttribute('rx', 4);
+      cabin.setAttribute('fill', '#ffe08a');
+      cabin.setAttribute('stroke', '#243c64');
+      cabin.setAttribute('stroke-width', '1.4');
+      group.appendChild(cabin);
+      [ -16, 16].forEach(offset=>{
+        const wheel = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        wheel.setAttribute('cx', x+offset);
+        wheel.setAttribute('cy', y+6);
+        wheel.setAttribute('r', 5);
+        wheel.setAttribute('fill', '#1b2738');
+        group.appendChild(wheel);
+      });
+      const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+      text.setAttribute('x', x);
+      text.setAttribute('y', y-24);
+      text.setAttribute('text-anchor','middle');
+      text.setAttribute('fill', '#1b2738');
+      text.setAttribute('font-size', '10px');
+      text.setAttribute('font-weight', '700');
+      text.textContent = label.toUpperCase();
+      group.appendChild(text);
+      svg.appendChild(group);
+    }
 
-  function drawWagon(x,y,label){
-    const group = document.createElementNS('http://www.w3.org/2000/svg','g');
-    const body = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    body.setAttribute('x', x-28); body.setAttribute('y', y-18);
-    body.setAttribute('width', 56); body.setAttribute('height', 24);
-    body.setAttribute('rx', 4); body.setAttribute('class','wagon-body');
-    group.appendChild(body);
-    const top = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    top.setAttribute('x', x-24); top.setAttribute('y', y-26);
-    top.setAttribute('width', 48); top.setAttribute('height', 10);
-    top.setAttribute('rx', 4); top.setAttribute('class','wagon-top');
-    group.appendChild(top);
-    [-16, 16].forEach(offset=>{
-      const wheel = document.createElementNS('http://www.w3.org/2000/svg','circle');
-      wheel.setAttribute('cx', x+offset);
-      wheel.setAttribute('cy', y+6);
-      wheel.setAttribute('r', 5);
-      wheel.setAttribute('class','wheel');
-      group.appendChild(wheel);
-    });
-    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
-    text.setAttribute('x', x);
-    text.setAttribute('y', y-18);
-    text.setAttribute('text-anchor','middle');
-    text.setAttribute('class','entity-label');
-    text.textContent = label.toUpperCase();
-    group.appendChild(text);
-    svg.appendChild(group);
-  }
+    function drawWagon(x,y,label){
+      const group = document.createElementNS('http://www.w3.org/2000/svg','g');
+      const body = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      body.setAttribute('x', x-28); body.setAttribute('y', y-18);
+      body.setAttribute('width', 56); body.setAttribute('height', 24);
+      body.setAttribute('rx', 4);
+      body.setAttribute('fill', '#71c4e8');
+      body.setAttribute('stroke', '#1b2738');
+      body.setAttribute('stroke-width', '1.8');
+      group.appendChild(body);
+      const top = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      top.setAttribute('x', x-24); top.setAttribute('y', y-26);
+      top.setAttribute('width', 48); top.setAttribute('height', 10);
+      top.setAttribute('rx', 4);
+      top.setAttribute('fill', '#9dd8f3');
+      top.setAttribute('stroke', '#1b2738');
+      top.setAttribute('stroke-width', '1.4');
+      group.appendChild(top);
+      [-16, 16].forEach(offset=>{
+        const wheel = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        wheel.setAttribute('cx', x+offset);
+        wheel.setAttribute('cy', y+6);
+        wheel.setAttribute('r', 5);
+        wheel.setAttribute('fill', '#1b2738');
+        group.appendChild(wheel);
+      });
+      const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+      text.setAttribute('x', x);
+      text.setAttribute('y', y-18);
+      text.setAttribute('text-anchor','middle');
+      text.setAttribute('fill', '#1b2738');
+      text.setAttribute('font-size', '10px');
+      text.setAttribute('font-weight', '700');
+      text.textContent = label.toUpperCase();
+      group.appendChild(text);
+      svg.appendChild(group);
+    }
 
-  function drawBag(x,y,label,status,checked){
-    const group = document.createElementNS('http://www.w3.org/2000/svg','g');
-    group.setAttribute('class', `bag ${status || 'normal'} ${checked ? 'checked' : ''}`.trim());
-    const body = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    body.setAttribute('x', x-12); body.setAttribute('y', y-12);
-    body.setAttribute('width', 24); body.setAttribute('height', 18);
-    body.setAttribute('rx', 4); body.setAttribute('class','bag-body');
-    group.appendChild(body);
-    const handle = document.createElementNS('http://www.w3.org/2000/svg','path');
-    handle.setAttribute('d', `M ${x-6} ${y-12} Q ${x} ${y-18} ${x+6} ${y-12}`);
-    handle.setAttribute('class','bag-handle');
-    group.appendChild(handle);
-    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
-    text.setAttribute('x', x);
-    text.setAttribute('y', y+18);
-    text.setAttribute('text-anchor','middle');
-    text.setAttribute('class','entity-label');
-    text.textContent = label.toUpperCase();
-    group.appendChild(text);
-    svg.appendChild(group);
-  }
+    function drawBag(x,y,label,status,checked){
+      const group = document.createElementNS('http://www.w3.org/2000/svg','g');
+      const body = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      body.setAttribute('x', x-12); body.setAttribute('y', y-12);
+      body.setAttribute('width', 24); body.setAttribute('height', 18);
+      body.setAttribute('rx', 4);
+      body.setAttribute('fill', status === 'sospechoso' ? '#ff4d4f' : '#67d49a');
+      body.setAttribute('stroke', '#1b2738');
+      body.setAttribute('stroke-width', '1.5');
+      if(checked){
+        body.setAttribute('filter', 'brightness(1.05)');
+      }
+      group.appendChild(body);
+      const handle = document.createElementNS('http://www.w3.org/2000/svg','path');
+      handle.setAttribute('d', `M ${x-6} ${y-12} Q ${x} ${y-18} ${x+6} ${y-12}`);
+      handle.setAttribute('fill', 'none');
+      handle.setAttribute('stroke', '#1b2738');
+      handle.setAttribute('stroke-width', '1.5');
+      group.appendChild(handle);
+      const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+      text.setAttribute('x', x);
+      text.setAttribute('y', y+18);
+      text.setAttribute('text-anchor','middle');
+      text.setAttribute('fill', '#1b2738');
+      text.setAttribute('font-size', '10px');
+      text.setAttribute('font-weight', '700');
+      text.textContent = label.toUpperCase();
+      group.appendChild(text);
+      svg.appendChild(group);
+    }
 
   Object.entries(perLocation).forEach(([loc, groups])=>{
     const base = nodes[loc];
@@ -575,32 +612,34 @@ function renderTokens(svg, state){
       drawMachine(x, baseLineY, entry.name);
       machinePositions.set(entry.name, {x, y: baseLineY});
       const drawChain = (anchorName, anchorX)=>{
-        const attached = groups.vagones.filter(v=>v.obj.attachedTo === anchorName);
-        attached.forEach((wag, widx)=>{
-          const wx = anchorX + (widx+1)*wagonSpacing;
-          drawWagon(wx, baseLineY, wag.name);
-          wagonPositions.set(wag.name, {x: wx, y: baseLineY});
-          drawnWagons.add(wag.name);
-          const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-          line.setAttribute('x1', anchorX);
-          line.setAttribute('y1', baseLineY);
-          line.setAttribute('x2', wx);
-          line.setAttribute('y2', baseLineY);
-          line.setAttribute('class','connection-line');
-          svg.appendChild(line);
-          drawChain(wag.name, wx);
-        });
-      };
+          const attached = groups.vagones.filter(v=>v.obj.attachedTo === anchorName);
+          attached.forEach((wag, widx)=>{
+            const wx = anchorX + (widx+1)*wagonSpacing;
+            drawWagon(wx, baseLineY, wag.name);
+            wagonPositions.set(wag.name, {x: wx, y: baseLineY});
+            drawnWagons.add(wag.name);
+            const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+            line.setAttribute('x1', anchorX);
+            line.setAttribute('y1', baseLineY);
+            line.setAttribute('x2', wx);
+            line.setAttribute('y2', baseLineY);
+            line.setAttribute('stroke', '#8ea1c7');
+            line.setAttribute('stroke-dasharray', '5 3');
+            line.setAttribute('stroke-width', '2');
+            svg.appendChild(line);
+            drawChain(wag.name, wx);
+          });
+        };
       drawChain(entry.name, x);
     });
 
     const freeWagons = groups.vagones.filter(v=>!drawnWagons.has(v.name));
     freeWagons.forEach((wag, idx)=>{
-      const wx = slot(base.x, freeWagons.length, idx, 110);
-      const wy = baseLineY;
-      drawWagon(wx, wy, wag.name);
-      wagonPositions.set(wag.name, {x: wx, y: wy});
-    });
+        const wx = slot(base.x, freeWagons.length, idx, 110);
+        const wy = baseLineY;
+        drawWagon(wx, wy, wag.name);
+        wagonPositions.set(wag.name, {x: wx, y: wy});
+      });
 
     const looseBags = groups.equipajes.filter(b=>!b.obj.container);
     looseBags.forEach((bag, idx)=>{
@@ -613,14 +652,14 @@ function renderTokens(svg, state){
   Object.entries(state).forEach(([name,obj])=>{
     if(obj.type !== 'equipaje' || !obj.container) return;
     const hostPos = wagonPositions.get(obj.container) || machinePositions.get(obj.container);
-    if(!hostPos) return;
-    const siblings = Object.entries(state).filter(([n,o])=> o.type==='equipaje' && o.container === obj.container);
-    const idx = siblings.findIndex(([n])=> n===name);
-    const bx = hostPos.x + (idx - (siblings.length-1)/2)*18;
-    const by = hostPos.y - 22;
-    drawBag(bx, by, name, obj.status, obj.checked);
-  });
-}
+      if(!hostPos) return;
+      const siblings = Object.entries(state).filter(([n,o])=> o.type==='equipaje' && o.container === obj.container);
+      const idx = siblings.findIndex(([n])=> n===name);
+      const bx = hostPos.x + (idx - (siblings.length-1)/2)*18;
+      const by = hostPos.y - 22;
+      drawBag(bx, by, name, obj.status, obj.checked);
+    });
+  }
 
   function renderLiterals(state, previousState){
     const list = document.getElementById('literalList');

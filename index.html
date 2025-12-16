@@ -976,8 +976,23 @@ function renderFrameCanvas(step){
   });
 }
 
+let cachedWorkerUrl = null;
+async function getWorkerUrl(){
+  if(cachedWorkerUrl){ return cachedWorkerUrl; }
+  const remoteUrl = 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js';
+  try {
+    const response = await fetch(remoteUrl);
+    if(!response.ok){ throw new Error('Respuesta no válida del CDN'); }
+    const code = await response.text();
+    cachedWorkerUrl = URL.createObjectURL(new Blob([code], {type:'application/javascript'}));
+    return cachedWorkerUrl;
+  } catch(err){
+    throw new Error('No se pudo obtener el worker de GIF.js. Comprueba la conexión o descarga el fichero localmente.');
+  }
+}
+
 async function exportGif(start, end, statusEl){
-  const workerUrl = 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js';
+  const workerUrl = await getWorkerUrl();
   const gif = new GIF({
     workers: 2,
     quality: 10,

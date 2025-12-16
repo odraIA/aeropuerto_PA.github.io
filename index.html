@@ -111,6 +111,50 @@ svg {
   background: #a7b4c9;
   cursor: not-allowed;
 }
+.export-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d6d9e1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+}
+.export-controls label {
+  font-size: 12px;
+  color: #1b2738;
+  display: block;
+  margin-bottom: 4px;
+}
+.export-controls select {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #cfd6e3;
+  font-size: 13px;
+}
+.export-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.export-actions button {
+  background: #1d7c4d;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.export-actions button:disabled {
+  background: #9dcab2;
+  cursor: not-allowed;
+}
+.export-actions small {
+  color: #243c64;
+}
 .action-log {
   max-height: 360px;
   overflow-y: auto;
@@ -211,6 +255,20 @@ svg {
       <button id="next">⏭️ Siguiente</button>
       <span id="status"></span>
     </div>
+    <div class="export-controls" aria-label="Exportar recorrido como GIF">
+      <div>
+        <label for="gifStart">Desde</label>
+        <select id="gifStart"></select>
+      </div>
+      <div>
+        <label for="gifEnd">Hasta</label>
+        <select id="gifEnd"></select>
+      </div>
+      <div class="export-actions">
+        <button id="downloadGif">Descargar GIF</button>
+        <small id="gifStatus"></small>
+      </div>
+    </div>
     <div class="legend">
       <span class="badge machine">M</span><span>Máquina</span>
       <span class="badge vagon">V</span><span>Vagón</span>
@@ -228,6 +286,7 @@ svg {
     </div>
   </div>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
 <script>
 const nodes = {
   facturacion: { x: 150, y: 140, label: 'Zona de facturación' },
@@ -646,12 +705,17 @@ function init(){
   const planInput = document.getElementById('planInput');
   const problemInput = document.getElementById('problemInput');
   const useLoaded = document.getElementById('useLoaded');
+  const gifStart = document.getElementById('gifStart');
+  const gifEnd = document.getElementById('gifEnd');
+  const downloadGif = document.getElementById('downloadGif');
+  const gifStatus = document.getElementById('gifStatus');
 
   planSelect.innerHTML = '';
   const baseOpt = document.createElement('option');
   baseOpt.value = '__initial__';
   baseOpt.textContent = currentPlanName || 'Plan inicial';
   planSelect.appendChild(baseOpt);
+  refreshActionRangeOptions(gifStart, gifEnd);
 
   back.addEventListener('click', ()=>{
     currentStep = Math.max(-1, currentStep-1);
@@ -691,6 +755,28 @@ function init(){
       currentProblemName = files[0].name;
     }
   });
+  downloadGif.addEventListener('click', async ()=>{
+    const start = parseInt(gifStart.value, 10);
+    const end = parseInt(gifEnd.value, 10);
+    if(Number.isNaN(start) || Number.isNaN(end)){
+      alert('Selecciona un rango válido de acciones.');
+      return;
+    }
+    if(start > end){
+      alert('El paso inicial debe ser anterior o igual al final.');
+      return;
+    }
+    downloadGif.disabled = true;
+    gifStatus.textContent = 'Preparando fotogramas...';
+    try {
+      await exportGif(start, end, gifStatus);
+    } catch(err){
+      alert('No se pudo generar el GIF: ' + err.message);
+    } finally {
+      downloadGif.disabled = false;
+      gifStatus.textContent = '';
+    }
+  });
   useLoaded.addEventListener('click', async ()=>{
     const selectedKey = planSelect.value;
     if(selectedKey === '__initial__'){
@@ -724,6 +810,7 @@ function applyPayload(pl){
   document.querySelector('header p').textContent = `Plan: ${currentPlanName} | Problema: ${currentProblemName}`;
   document.getElementById('log').innerHTML = '';
   populateLog(document.getElementById('log'));
+  refreshActionRangeOptions(document.getElementById('gifStart'), document.getElementById('gifEnd'));
   currentStep = -1;
   update(currentStep);
 }
@@ -837,6 +924,89 @@ function parsePlanJS(planText){
     actions.push({index: actions.length, time: parseFloat(match[1]), name: parts[0], args: parts.slice(1), raw});
   }
   return actions;
+}
+
+function refreshActionRangeOptions(startSelect, endSelect){
+  if(!startSelect || !endSelect) return;
+  const options = [];
+  for(let i=-1; i<actions.length; i++){
+    const label = i < 0 ? 'Estado inicial' : `Acción ${i+1}`;
+    options.push({value: i, label});
+  }
+  [startSelect, endSelect].forEach((sel, idx)=>{
+    const previous = parseInt(sel.value, 10);
+    sel.innerHTML = '';
+    options.forEach(optData=>{
+      const opt = document.createElement('option');
+      opt.value = optData.value;
+      opt.textContent = optData.label;
+      sel.appendChild(opt);
+    });
+    const fallback = idx === 0 ? -1 : actions.length -1;
+    sel.value = Number.isNaN(previous) ? fallback : previous;
+    if(sel.value === '') sel.value = fallback;
+  });
+}
+
+function renderFrameCanvas(step){
+  return new Promise((resolve, reject)=>{
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    svg.setAttribute('viewBox','0 0 1040 660');
+    svg.setAttribute('width','1040');
+    svg.setAttribute('height','660');
+    drawMap(svg);
+    const frameState = computeState(step);
+    renderTokens(svg, frameState);
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(svg);
+    const img = new Image();
+    img.onload = ()=>{
+      const canvas = document.createElement('canvas');
+      canvas.width = 1040;
+      canvas.height = 660;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fdfefe';
+      ctx.fillRect(0,0,canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas);
+    };
+    img.onerror = ()=> reject(new Error('No se pudo rasterizar el plano.'));
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+  });
+}
+
+async function exportGif(start, end, statusEl){
+  const workerUrl = 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js';
+  const gif = new GIF({
+    workers: 2,
+    quality: 10,
+    width: 1040,
+    height: 660,
+    workerScript: workerUrl,
+  });
+  const delay = 900;
+  for(let step=start; step<=end; step++){
+    if(statusEl){ statusEl.textContent = `Renderizando paso ${step+1}/${end+1}`; }
+    const canvas = await renderFrameCanvas(step);
+    gif.addFrame(canvas, {delay});
+  }
+  return new Promise((resolve, reject)=>{
+    gif.on('finished', (blob)=>{
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const planSlug = (currentPlanName || 'plan').replace(/\s+/g,'-');
+      a.download = `${planSlug}_acciones_${start+1}-${end+1}.gif`;
+      a.click();
+      URL.revokeObjectURL(url);
+      resolve();
+    });
+    gif.on('abort', ()=> reject(new Error('Proceso cancelado.')));
+    gif.on('error', (err)=> reject(err));
+    if(statusEl){ statusEl.textContent = 'Generando GIF...'; }
+    gif.render();
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);

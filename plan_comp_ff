@@ -1,0 +1,113 @@
+
+ff: parsing domain file
+domain 'AEROPUERTO' defined
+ ... done.
+ff: parsing problem file
+problem 'AEROPUERTO-P1' defined
+ ... done.
+
+
+no metric specified. plan length assumed.
+
+checking for cyclic := effects --- OK.
+
+ff: search configuration is EHC, if that fails then  best-first on 1*g(s) + 5*h(s) where
+    metric is  plan length
+
+Cueing down from goal distance:   23 into depth [1]
+                                  22            [1][2][3][4][5][6][7][8][9]
+                                  20            [1][2][3][4][5][6][7]
+                                  19            [1]
+                                  18            [1]
+                                  17            [1]
+                                  16            [1][2][3][4][5][6][7][8][9]
+                                  15            [1]
+                                  14            [1][2][3][4][5][6][7][8][9]
+                                  13            [1]
+                                  12            [1][2][3][4][5][6][7][8][9]
+                                  11            [1]
+                                  10            [1][2][3][4][5][6][7][8]
+                                   7            [1][2][3]
+                                   5            [1]
+                                   4            [1]
+                                   3            [1]
+                                   2            [1]
+                                   1            [1]
+                                   0            
+
+ff: found legal plan as follows
+
+step    0: ENGANCHAR-VAGON V3 M2 PUERTA1 N0
+        1: MOVER-MAQUINA M2 PUERTA1 INSPECCION
+        2: MOVER-MAQUINA M2 INSPECCION RECOGIDA
+        3: MOVER-MAQUINA M2 RECOGIDA PUERTA6
+        4: MOVER-MAQUINA M1 PUERTA1 PUERTA3
+        5: MOVER-MAQUINA M2 PUERTA6 PUERTA8
+        6: MOVER-MAQUINA M2 PUERTA8 PUERTA7
+        7: MOVER-MAQUINA M2 PUERTA7 PUERTA5
+        8: CARGAR-EQUIPAJE E3 V3 M2 PUERTA5 N0 N1
+        9: CARGAR-EQUIPAJE E6 V3 M2 PUERTA5 N1 N2
+       10: MOVER-MAQUINA M2 PUERTA5 PUERTA7
+       11: MOVER-MAQUINA M2 PUERTA7 PUERTA8
+       12: MOVER-MAQUINA M2 PUERTA8 PUERTA6
+       13: MOVER-MAQUINA M2 PUERTA6 RECOGIDA
+       14: MOVER-MAQUINA M2 RECOGIDA INSPECCION
+       15: INSPECCIONAR-EQUIPAJE E3 INSPECCION V3 M2
+       16: INSPECCIONAR-EQUIPAJE E6 INSPECCION V3 M2
+       17: MOVER-MAQUINA M2 INSPECCION FACTURACION
+       18: MOVER-MAQUINA M2 FACTURACION RECOGIDA
+       19: DESCARGAR-NORMAL E6 V3 M2 RECOGIDA N2 N1
+       20: MOVER-MAQUINA M2 RECOGIDA PUERTA6
+       21: MOVER-MAQUINA M2 PUERTA6 PUERTA8
+       22: MOVER-MAQUINA M2 PUERTA8 PUERTA7
+       23: MOVER-MAQUINA M2 PUERTA7 PUERTA5
+       24: CARGAR-EQUIPAJE E2 V3 M2 PUERTA5 N1 N2
+       25: MOVER-MAQUINA M2 PUERTA5 PUERTA7
+       26: MOVER-MAQUINA M2 PUERTA7 PUERTA8
+       27: MOVER-MAQUINA M2 PUERTA8 PUERTA6
+       28: MOVER-MAQUINA M2 PUERTA6 RECOGIDA
+       29: DESCARGAR-NORMAL E3 V3 M2 RECOGIDA N2 N1
+       30: MOVER-MAQUINA M2 RECOGIDA PUERTA6
+       31: MOVER-MAQUINA M2 PUERTA6 PUERTA8
+       32: MOVER-MAQUINA M2 PUERTA8 PUERTA7
+       33: MOVER-MAQUINA M2 PUERTA7 PUERTA5
+       34: CARGAR-EQUIPAJE E4 V3 M2 PUERTA5 N1 N2
+       35: MOVER-MAQUINA M2 PUERTA5 PUERTA7
+       36: MOVER-MAQUINA M2 PUERTA7 PUERTA8
+       37: MOVER-MAQUINA M2 PUERTA8 PUERTA6
+       38: MOVER-MAQUINA M2 PUERTA6 RECOGIDA
+       39: DESCARGAR-NORMAL E4 V3 M2 RECOGIDA N2 N1
+       40: MOVER-MAQUINA M2 RECOGIDA PUERTA6
+       41: MOVER-MAQUINA M2 PUERTA6 PUERTA8
+       42: MOVER-MAQUINA M2 PUERTA8 PUERTA7
+       43: MOVER-MAQUINA M2 PUERTA7 PUERTA5
+       44: CARGAR-EQUIPAJE E5 V3 M2 PUERTA5 N1 N2
+       45: MOVER-MAQUINA M2 PUERTA5 PUERTA7
+       46: MOVER-MAQUINA M2 PUERTA7 PUERTA8
+       47: MOVER-MAQUINA M2 PUERTA8 PUERTA6
+       48: MOVER-MAQUINA M2 PUERTA6 RECOGIDA
+       49: DESCARGAR-NORMAL E5 V3 M2 RECOGIDA N2 N1
+       50: MOVER-MAQUINA M2 RECOGIDA PUERTA6
+       51: MOVER-MAQUINA M2 PUERTA6 PUERTA8
+       52: MOVER-MAQUINA M2 PUERTA8 PUERTA7
+       53: MOVER-MAQUINA M2 PUERTA7 PUERTA5
+       54: CARGAR-EQUIPAJE E1 V3 M2 PUERTA5 N1 N2
+       55: MOVER-MAQUINA M2 PUERTA5 PUERTA7
+       56: MOVER-MAQUINA M2 PUERTA7 PUERTA8
+       57: DESCARGAR-NORMAL E2 V3 M2 PUERTA8 N2 N1
+       58: MOVER-MAQUINA M2 PUERTA8 PUERTA6
+       59: MOVER-MAQUINA M2 PUERTA6 RECOGIDA
+       60: MOVER-MAQUINA M2 RECOGIDA FACTURACION
+       61: MOVER-MAQUINA M2 FACTURACION PUERTA2
+       62: MOVER-MAQUINA M2 PUERTA2 PUERTA4
+       63: DESCARGAR-NORMAL E1 V3 M2 PUERTA4 N1 N0
+     
+
+time spent:    0.00 seconds instantiating 3518 easy, 0 hard action templates
+               0.00 seconds reachability analysis, yielding 243 facts and 3478 actions
+               0.00 seconds creating final representation with 239 relevant facts, 0 relevant fluents
+               0.00 seconds computing LNF
+               0.02 seconds building connectivity graph
+               0.64 seconds searching, evaluating 4690 states, to a max depth of 9
+               0.66 seconds total time
+

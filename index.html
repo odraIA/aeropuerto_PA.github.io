@@ -111,6 +111,50 @@ svg {
   background: #a7b4c9;
   cursor: not-allowed;
 }
+.export-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d6d9e1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+}
+.export-controls label {
+  font-size: 12px;
+  color: #1b2738;
+  display: block;
+  margin-bottom: 4px;
+}
+.export-controls select {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #cfd6e3;
+  font-size: 13px;
+}
+.export-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.export-actions button {
+  background: #1d7c4d;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.export-actions button:disabled {
+  background: #9dcab2;
+  cursor: not-allowed;
+}
+.export-actions small {
+  color: #243c64;
+}
 .action-log {
   max-height: 360px;
   overflow-y: auto;
@@ -211,6 +255,20 @@ svg {
       <button id="next">⏭️ Siguiente</button>
       <span id="status"></span>
     </div>
+    <div class="export-controls" aria-label="Exportar recorrido como GIF">
+      <div>
+        <label for="gifStart">Desde</label>
+        <select id="gifStart"></select>
+      </div>
+      <div>
+        <label for="gifEnd">Hasta</label>
+        <select id="gifEnd"></select>
+      </div>
+      <div class="export-actions">
+        <button id="downloadGif">Descargar GIF</button>
+        <small id="gifStatus"></small>
+      </div>
+    </div>
     <div class="legend">
       <span class="badge machine">M</span><span>Máquina</span>
       <span class="badge vagon">V</span><span>Vagón</span>
@@ -228,6 +286,7 @@ svg {
     </div>
   </div>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
 <script>
 const nodes = {
   facturacion: { x: 150, y: 140, label: 'Zona de facturación' },
@@ -364,48 +423,60 @@ function applyAction(st, action){
   }
 }
 
-function drawMap(svg){
-  svg.innerHTML = '';
-  edges.forEach(([a,b])=>{
-    const na = nodes[a];
-    const nb = nodes[b];
-    const road = document.createElementNS('http://www.w3.org/2000/svg','line');
-    road.setAttribute('x1', na.x);
-    road.setAttribute('y1', na.y);
-    road.setAttribute('x2', nb.x);
-    road.setAttribute('y2', nb.y);
-    road.setAttribute('class','road');
-    svg.appendChild(road);
+  function drawMap(svg){
+    svg.innerHTML = '';
+    svg.setAttribute('style','background:#fdfefe;border:1px solid #d6d9e1;border-radius:12px;');
+    edges.forEach(([a,b])=>{
+      const na = nodes[a];
+      const nb = nodes[b];
+      const road = document.createElementNS('http://www.w3.org/2000/svg','line');
+      road.setAttribute('x1', na.x);
+      road.setAttribute('y1', na.y);
+      road.setAttribute('x2', nb.x);
+      road.setAttribute('y2', nb.y);
+      road.setAttribute('stroke', '#9aaac7');
+      road.setAttribute('stroke-width', '10');
+      road.setAttribute('stroke-linecap', 'round');
+      road.setAttribute('opacity', '0.9');
+      svg.appendChild(road);
 
-    const dash = document.createElementNS('http://www.w3.org/2000/svg','line');
-    dash.setAttribute('x1', na.x);
-    dash.setAttribute('y1', na.y);
-    dash.setAttribute('x2', nb.x);
-    dash.setAttribute('y2', nb.y);
-    dash.setAttribute('class','road-dash');
-    svg.appendChild(dash);
-  });
-  Object.entries(nodes).forEach(([name,info])=>{
-    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    rect.setAttribute('x', info.x - 60);
-    rect.setAttribute('y', info.y - 30);
-    rect.setAttribute('width', 120);
-    rect.setAttribute('height', 60);
-    rect.setAttribute('rx', 8);
-    rect.setAttribute('class','node');
-    svg.appendChild(rect);
+      const dash = document.createElementNS('http://www.w3.org/2000/svg','line');
+      dash.setAttribute('x1', na.x);
+      dash.setAttribute('y1', na.y);
+      dash.setAttribute('x2', nb.x);
+      dash.setAttribute('y2', nb.y);
+      dash.setAttribute('stroke', '#fdfefe');
+      dash.setAttribute('stroke-width', '3');
+      dash.setAttribute('stroke-linecap', 'round');
+      dash.setAttribute('stroke-dasharray', '14 10');
+      dash.setAttribute('opacity', '0.9');
+      svg.appendChild(dash);
+    });
+    Object.entries(nodes).forEach(([name,info])=>{
+      const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('x', info.x - 60);
+      rect.setAttribute('y', info.y - 30);
+      rect.setAttribute('width', 120);
+      rect.setAttribute('height', 60);
+      rect.setAttribute('rx', 8);
+      rect.setAttribute('fill', '#e8edf6');
+      rect.setAttribute('stroke', '#243c64');
+      rect.setAttribute('stroke-width', '2');
+      svg.appendChild(rect);
 
-    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
-    label.setAttribute('x', info.x);
-    label.setAttribute('y', info.y);
-    label.setAttribute('text-anchor', 'middle');
-    label.setAttribute('class','node-label');
-    label.textContent = info.label;
-    svg.appendChild(label);
-  });
-}
+      const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+      label.setAttribute('x', info.x);
+      label.setAttribute('y', info.y);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('fill', '#1b2738');
+      label.setAttribute('font-size', '12px');
+      label.setAttribute('font-weight', '600');
+      label.textContent = info.label;
+      svg.appendChild(label);
+    });
+  }
 
-function renderTokens(svg, state){
+  function renderTokens(svg, state){
   const perLocation = {};
   Object.entries(state).forEach(([name,obj])=>{
     const loc = locationFor(name, state);
@@ -424,87 +495,112 @@ function renderTokens(svg, state){
     return baseX + (idx - (total-1)/2) * spacing;
   }
 
-  function drawMachine(x,y,label){
-    const group = document.createElementNS('http://www.w3.org/2000/svg','g');
-    const body = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    body.setAttribute('x', x-28); body.setAttribute('y', y-22);
-    body.setAttribute('width', 56); body.setAttribute('height', 28);
-    body.setAttribute('rx', 8); body.setAttribute('class','machine-body');
-    group.appendChild(body);
-    const cabin = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    cabin.setAttribute('x', x-12); cabin.setAttribute('y', y-32);
-    cabin.setAttribute('width', 22); cabin.setAttribute('height', 12);
-    cabin.setAttribute('rx', 4); cabin.setAttribute('class','machine-cabin');
-    group.appendChild(cabin);
-    [ -16, 16].forEach(offset=>{
-      const wheel = document.createElementNS('http://www.w3.org/2000/svg','circle');
-      wheel.setAttribute('cx', x+offset);
-      wheel.setAttribute('cy', y+6);
-      wheel.setAttribute('r', 5);
-      wheel.setAttribute('class','wheel');
-      group.appendChild(wheel);
-    });
-    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
-    text.setAttribute('x', x);
-    text.setAttribute('y', y-24);
-    text.setAttribute('text-anchor','middle');
-    text.setAttribute('class','entity-label');
-    text.textContent = label.toUpperCase();
-    group.appendChild(text);
-    svg.appendChild(group);
-  }
+    function drawMachine(x,y,label){
+      const group = document.createElementNS('http://www.w3.org/2000/svg','g');
+      const body = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      body.setAttribute('x', x-28); body.setAttribute('y', y-22);
+      body.setAttribute('width', 56); body.setAttribute('height', 28);
+      body.setAttribute('rx', 8);
+      body.setAttribute('fill', '#f6c344');
+      body.setAttribute('stroke', '#243c64');
+      body.setAttribute('stroke-width', '1.8');
+      group.appendChild(body);
+      const cabin = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      cabin.setAttribute('x', x-12); cabin.setAttribute('y', y-32);
+      cabin.setAttribute('width', 22); cabin.setAttribute('height', 12);
+      cabin.setAttribute('rx', 4);
+      cabin.setAttribute('fill', '#ffe08a');
+      cabin.setAttribute('stroke', '#243c64');
+      cabin.setAttribute('stroke-width', '1.4');
+      group.appendChild(cabin);
+      [ -16, 16].forEach(offset=>{
+        const wheel = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        wheel.setAttribute('cx', x+offset);
+        wheel.setAttribute('cy', y+6);
+        wheel.setAttribute('r', 5);
+        wheel.setAttribute('fill', '#1b2738');
+        group.appendChild(wheel);
+      });
+      const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+      text.setAttribute('x', x);
+      text.setAttribute('y', y-24);
+      text.setAttribute('text-anchor','middle');
+      text.setAttribute('fill', '#1b2738');
+      text.setAttribute('font-size', '10px');
+      text.setAttribute('font-weight', '700');
+      text.textContent = label.toUpperCase();
+      group.appendChild(text);
+      svg.appendChild(group);
+    }
 
-  function drawWagon(x,y,label){
-    const group = document.createElementNS('http://www.w3.org/2000/svg','g');
-    const body = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    body.setAttribute('x', x-28); body.setAttribute('y', y-18);
-    body.setAttribute('width', 56); body.setAttribute('height', 24);
-    body.setAttribute('rx', 4); body.setAttribute('class','wagon-body');
-    group.appendChild(body);
-    const top = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    top.setAttribute('x', x-24); top.setAttribute('y', y-26);
-    top.setAttribute('width', 48); top.setAttribute('height', 10);
-    top.setAttribute('rx', 4); top.setAttribute('class','wagon-top');
-    group.appendChild(top);
-    [-16, 16].forEach(offset=>{
-      const wheel = document.createElementNS('http://www.w3.org/2000/svg','circle');
-      wheel.setAttribute('cx', x+offset);
-      wheel.setAttribute('cy', y+6);
-      wheel.setAttribute('r', 5);
-      wheel.setAttribute('class','wheel');
-      group.appendChild(wheel);
-    });
-    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
-    text.setAttribute('x', x);
-    text.setAttribute('y', y-18);
-    text.setAttribute('text-anchor','middle');
-    text.setAttribute('class','entity-label');
-    text.textContent = label.toUpperCase();
-    group.appendChild(text);
-    svg.appendChild(group);
-  }
+    function drawWagon(x,y,label){
+      const group = document.createElementNS('http://www.w3.org/2000/svg','g');
+      const body = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      body.setAttribute('x', x-28); body.setAttribute('y', y-18);
+      body.setAttribute('width', 56); body.setAttribute('height', 24);
+      body.setAttribute('rx', 4);
+      body.setAttribute('fill', '#71c4e8');
+      body.setAttribute('stroke', '#1b2738');
+      body.setAttribute('stroke-width', '1.8');
+      group.appendChild(body);
+      const top = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      top.setAttribute('x', x-24); top.setAttribute('y', y-26);
+      top.setAttribute('width', 48); top.setAttribute('height', 10);
+      top.setAttribute('rx', 4);
+      top.setAttribute('fill', '#9dd8f3');
+      top.setAttribute('stroke', '#1b2738');
+      top.setAttribute('stroke-width', '1.4');
+      group.appendChild(top);
+      [-16, 16].forEach(offset=>{
+        const wheel = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        wheel.setAttribute('cx', x+offset);
+        wheel.setAttribute('cy', y+6);
+        wheel.setAttribute('r', 5);
+        wheel.setAttribute('fill', '#1b2738');
+        group.appendChild(wheel);
+      });
+      const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+      text.setAttribute('x', x);
+      text.setAttribute('y', y-18);
+      text.setAttribute('text-anchor','middle');
+      text.setAttribute('fill', '#1b2738');
+      text.setAttribute('font-size', '10px');
+      text.setAttribute('font-weight', '700');
+      text.textContent = label.toUpperCase();
+      group.appendChild(text);
+      svg.appendChild(group);
+    }
 
-  function drawBag(x,y,label,status,checked){
-    const group = document.createElementNS('http://www.w3.org/2000/svg','g');
-    group.setAttribute('class', `bag ${status || 'normal'} ${checked ? 'checked' : ''}`.trim());
-    const body = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    body.setAttribute('x', x-12); body.setAttribute('y', y-12);
-    body.setAttribute('width', 24); body.setAttribute('height', 18);
-    body.setAttribute('rx', 4); body.setAttribute('class','bag-body');
-    group.appendChild(body);
-    const handle = document.createElementNS('http://www.w3.org/2000/svg','path');
-    handle.setAttribute('d', `M ${x-6} ${y-12} Q ${x} ${y-18} ${x+6} ${y-12}`);
-    handle.setAttribute('class','bag-handle');
-    group.appendChild(handle);
-    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
-    text.setAttribute('x', x);
-    text.setAttribute('y', y+18);
-    text.setAttribute('text-anchor','middle');
-    text.setAttribute('class','entity-label');
-    text.textContent = label.toUpperCase();
-    group.appendChild(text);
-    svg.appendChild(group);
-  }
+    function drawBag(x,y,label,status,checked){
+      const group = document.createElementNS('http://www.w3.org/2000/svg','g');
+      const body = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      body.setAttribute('x', x-12); body.setAttribute('y', y-12);
+      body.setAttribute('width', 24); body.setAttribute('height', 18);
+      body.setAttribute('rx', 4);
+      body.setAttribute('fill', status === 'sospechoso' ? '#ff4d4f' : '#67d49a');
+      body.setAttribute('stroke', '#1b2738');
+      body.setAttribute('stroke-width', '1.5');
+      if(checked){
+        body.setAttribute('filter', 'brightness(1.05)');
+      }
+      group.appendChild(body);
+      const handle = document.createElementNS('http://www.w3.org/2000/svg','path');
+      handle.setAttribute('d', `M ${x-6} ${y-12} Q ${x} ${y-18} ${x+6} ${y-12}`);
+      handle.setAttribute('fill', 'none');
+      handle.setAttribute('stroke', '#1b2738');
+      handle.setAttribute('stroke-width', '1.5');
+      group.appendChild(handle);
+      const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+      text.setAttribute('x', x);
+      text.setAttribute('y', y+18);
+      text.setAttribute('text-anchor','middle');
+      text.setAttribute('fill', '#1b2738');
+      text.setAttribute('font-size', '10px');
+      text.setAttribute('font-weight', '700');
+      text.textContent = label.toUpperCase();
+      group.appendChild(text);
+      svg.appendChild(group);
+    }
 
   Object.entries(perLocation).forEach(([loc, groups])=>{
     const base = nodes[loc];
@@ -516,32 +612,34 @@ function renderTokens(svg, state){
       drawMachine(x, baseLineY, entry.name);
       machinePositions.set(entry.name, {x, y: baseLineY});
       const drawChain = (anchorName, anchorX)=>{
-        const attached = groups.vagones.filter(v=>v.obj.attachedTo === anchorName);
-        attached.forEach((wag, widx)=>{
-          const wx = anchorX + (widx+1)*wagonSpacing;
-          drawWagon(wx, baseLineY, wag.name);
-          wagonPositions.set(wag.name, {x: wx, y: baseLineY});
-          drawnWagons.add(wag.name);
-          const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-          line.setAttribute('x1', anchorX);
-          line.setAttribute('y1', baseLineY);
-          line.setAttribute('x2', wx);
-          line.setAttribute('y2', baseLineY);
-          line.setAttribute('class','connection-line');
-          svg.appendChild(line);
-          drawChain(wag.name, wx);
-        });
-      };
+          const attached = groups.vagones.filter(v=>v.obj.attachedTo === anchorName);
+          attached.forEach((wag, widx)=>{
+            const wx = anchorX + (widx+1)*wagonSpacing;
+            drawWagon(wx, baseLineY, wag.name);
+            wagonPositions.set(wag.name, {x: wx, y: baseLineY});
+            drawnWagons.add(wag.name);
+            const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+            line.setAttribute('x1', anchorX);
+            line.setAttribute('y1', baseLineY);
+            line.setAttribute('x2', wx);
+            line.setAttribute('y2', baseLineY);
+            line.setAttribute('stroke', '#8ea1c7');
+            line.setAttribute('stroke-dasharray', '5 3');
+            line.setAttribute('stroke-width', '2');
+            svg.appendChild(line);
+            drawChain(wag.name, wx);
+          });
+        };
       drawChain(entry.name, x);
     });
 
     const freeWagons = groups.vagones.filter(v=>!drawnWagons.has(v.name));
     freeWagons.forEach((wag, idx)=>{
-      const wx = slot(base.x, freeWagons.length, idx, 110);
-      const wy = baseLineY;
-      drawWagon(wx, wy, wag.name);
-      wagonPositions.set(wag.name, {x: wx, y: wy});
-    });
+        const wx = slot(base.x, freeWagons.length, idx, 110);
+        const wy = baseLineY;
+        drawWagon(wx, wy, wag.name);
+        wagonPositions.set(wag.name, {x: wx, y: wy});
+      });
 
     const looseBags = groups.equipajes.filter(b=>!b.obj.container);
     looseBags.forEach((bag, idx)=>{
@@ -554,14 +652,14 @@ function renderTokens(svg, state){
   Object.entries(state).forEach(([name,obj])=>{
     if(obj.type !== 'equipaje' || !obj.container) return;
     const hostPos = wagonPositions.get(obj.container) || machinePositions.get(obj.container);
-    if(!hostPos) return;
-    const siblings = Object.entries(state).filter(([n,o])=> o.type==='equipaje' && o.container === obj.container);
-    const idx = siblings.findIndex(([n])=> n===name);
-    const bx = hostPos.x + (idx - (siblings.length-1)/2)*18;
-    const by = hostPos.y - 22;
-    drawBag(bx, by, name, obj.status, obj.checked);
-  });
-}
+      if(!hostPos) return;
+      const siblings = Object.entries(state).filter(([n,o])=> o.type==='equipaje' && o.container === obj.container);
+      const idx = siblings.findIndex(([n])=> n===name);
+      const bx = hostPos.x + (idx - (siblings.length-1)/2)*18;
+      const by = hostPos.y - 22;
+      drawBag(bx, by, name, obj.status, obj.checked);
+    });
+  }
 
   function renderLiterals(state, previousState){
     const list = document.getElementById('literalList');
@@ -646,12 +744,17 @@ function init(){
   const planInput = document.getElementById('planInput');
   const problemInput = document.getElementById('problemInput');
   const useLoaded = document.getElementById('useLoaded');
+  const gifStart = document.getElementById('gifStart');
+  const gifEnd = document.getElementById('gifEnd');
+  const downloadGif = document.getElementById('downloadGif');
+  const gifStatus = document.getElementById('gifStatus');
 
   planSelect.innerHTML = '';
   const baseOpt = document.createElement('option');
   baseOpt.value = '__initial__';
   baseOpt.textContent = currentPlanName || 'Plan inicial';
   planSelect.appendChild(baseOpt);
+  refreshActionRangeOptions(gifStart, gifEnd);
 
   back.addEventListener('click', ()=>{
     currentStep = Math.max(-1, currentStep-1);
@@ -691,6 +794,28 @@ function init(){
       currentProblemName = files[0].name;
     }
   });
+  downloadGif.addEventListener('click', async ()=>{
+    const start = parseInt(gifStart.value, 10);
+    const end = parseInt(gifEnd.value, 10);
+    if(Number.isNaN(start) || Number.isNaN(end)){
+      alert('Selecciona un rango válido de acciones.');
+      return;
+    }
+    if(start > end){
+      alert('El paso inicial debe ser anterior o igual al final.');
+      return;
+    }
+    downloadGif.disabled = true;
+    gifStatus.textContent = 'Preparando fotogramas...';
+    try {
+      await exportGif(start, end, gifStatus);
+    } catch(err){
+      alert('No se pudo generar el GIF: ' + err.message);
+    } finally {
+      downloadGif.disabled = false;
+      gifStatus.textContent = '';
+    }
+  });
   useLoaded.addEventListener('click', async ()=>{
     const selectedKey = planSelect.value;
     if(selectedKey === '__initial__'){
@@ -724,6 +849,7 @@ function applyPayload(pl){
   document.querySelector('header p').textContent = `Plan: ${currentPlanName} | Problema: ${currentProblemName}`;
   document.getElementById('log').innerHTML = '';
   populateLog(document.getElementById('log'));
+  refreshActionRangeOptions(document.getElementById('gifStart'), document.getElementById('gifEnd'));
   currentStep = -1;
   update(currentStep);
 }
@@ -837,6 +963,104 @@ function parsePlanJS(planText){
     actions.push({index: actions.length, time: parseFloat(match[1]), name: parts[0], args: parts.slice(1), raw});
   }
   return actions;
+}
+
+function refreshActionRangeOptions(startSelect, endSelect){
+  if(!startSelect || !endSelect) return;
+  const options = [];
+  for(let i=-1; i<actions.length; i++){
+    const label = i < 0 ? 'Estado inicial' : `Acción ${i+1}`;
+    options.push({value: i, label});
+  }
+  [startSelect, endSelect].forEach((sel, idx)=>{
+    const previous = parseInt(sel.value, 10);
+    sel.innerHTML = '';
+    options.forEach(optData=>{
+      const opt = document.createElement('option');
+      opt.value = optData.value;
+      opt.textContent = optData.label;
+      sel.appendChild(opt);
+    });
+    const fallback = idx === 0 ? -1 : actions.length -1;
+    sel.value = Number.isNaN(previous) ? fallback : previous;
+    if(sel.value === '') sel.value = fallback;
+  });
+}
+
+function renderFrameCanvas(step){
+  return new Promise((resolve, reject)=>{
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    svg.setAttribute('viewBox','0 0 1040 660');
+    svg.setAttribute('width','1040');
+    svg.setAttribute('height','660');
+    drawMap(svg);
+    const frameState = computeState(step);
+    renderTokens(svg, frameState);
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(svg);
+    const img = new Image();
+    img.onload = ()=>{
+      const canvas = document.createElement('canvas');
+      canvas.width = 1040;
+      canvas.height = 660;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fdfefe';
+      ctx.fillRect(0,0,canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas);
+    };
+    img.onerror = ()=> reject(new Error('No se pudo rasterizar el plano.'));
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+  });
+}
+
+let cachedWorkerUrl = null;
+async function getWorkerUrl(){
+  if(cachedWorkerUrl){ return cachedWorkerUrl; }
+  const remoteUrl = 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js';
+  try {
+    const response = await fetch(remoteUrl);
+    if(!response.ok){ throw new Error('Respuesta no válida del CDN'); }
+    const code = await response.text();
+    cachedWorkerUrl = URL.createObjectURL(new Blob([code], {type:'application/javascript'}));
+    return cachedWorkerUrl;
+  } catch(err){
+    throw new Error('No se pudo obtener el worker de GIF.js. Comprueba la conexión o descarga el fichero localmente.');
+  }
+}
+
+async function exportGif(start, end, statusEl){
+  const workerUrl = await getWorkerUrl();
+  const gif = new GIF({
+    workers: 2,
+    quality: 10,
+    width: 1040,
+    height: 660,
+    workerScript: workerUrl,
+  });
+  const delay = 900;
+  for(let step=start; step<=end; step++){
+    if(statusEl){ statusEl.textContent = `Renderizando paso ${step+1}/${end+1}`; }
+    const canvas = await renderFrameCanvas(step);
+    gif.addFrame(canvas, {delay});
+  }
+  return new Promise((resolve, reject)=>{
+    gif.on('finished', (blob)=>{
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const planSlug = (currentPlanName || 'plan').replace(/\s+/g,'-');
+      a.download = `${planSlug}_acciones_${start+1}-${end+1}.gif`;
+      a.click();
+      URL.revokeObjectURL(url);
+      resolve();
+    });
+    gif.on('abort', ()=> reject(new Error('Proceso cancelado.')));
+    gif.on('error', (err)=> reject(err));
+    if(statusEl){ statusEl.textContent = 'Generando GIF...'; }
+    gif.render();
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);

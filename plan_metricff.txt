@@ -1,0 +1,3 @@
+Script started on 2025-12-16 09:45:35+01:00 [COMMAND="./metric_ff -o airport_domain.pddl -f problem_comp.pddl" TERM="xterm-256color" TTY="/dev/pts/1" COLUMNS="163" LINES="13"]
+
+Script done on 2025-12-16 09:45:35+01:00 [COMMAND_EXIT_CODE="0"]

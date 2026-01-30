@@ -1,0 +1,7 @@
+matplotlib
+pillow<10,>=8
+gym>=0.24.0
+imageio
+imageio-ffmpeg
+networkx
+scikit-image

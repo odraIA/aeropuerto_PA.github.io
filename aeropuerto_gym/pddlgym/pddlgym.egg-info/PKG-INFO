@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: pddlgym
+Version: 0.0.7
+License-File: LICENSE.md
+Requires-Dist: matplotlib
+Requires-Dist: pillow<10,>=8
+Requires-Dist: gym>=0.24.0
+Requires-Dist: imageio
+Requires-Dist: imageio-ffmpeg
+Requires-Dist: networkx
+Requires-Dist: scikit-image
+Dynamic: license-file
+Dynamic: requires-dist
